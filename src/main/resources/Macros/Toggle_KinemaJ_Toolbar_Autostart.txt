@@ -1,0 +1,121 @@
+// Function written by Nicolas Stifani nstifani@gmail.com for more info
+requires("1.50f");
+PluginName="KinemaJ";
+
+IJPosX=screenWidth*0.1;
+IJPosY=screenHeight*0;
+IJSizeX=575;
+IJSizeY=100;
+Spacer=20;
+DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");");
+
+// Look if is already loaded at startup
+MacroFolder=eval("script", "IJ.getDirectory(\"macros\");");
+StartUpMarcro="RunAtStartup.ijm";
+// If the RunAtStartup do not exists create an empty new one
+if (File.exists(MacroFolder+StartUpMarcro)==0){
+NewStartUpMacro=File.open(MacroFolder+StartUpMarcro);
+File.close(NewStartUpMacro);
+} // end of create an empty RunAtStartUp if it does not yet exist
+StartUpMacroContent=File.openAsString(MacroFolder+StartUpMarcro);
+StartUpMacroContentArray=split(StartUpMacroContent, "\n");
+
+// Set the Status as inactive
+AutostartStatus="inactive";
+
+// Screen the Content of Startup and if matches change the status to active
+for (n=0; n<StartUpMacroContentArray.length; n++){
+if(matches(StartUpMacroContentArray[n], "run\\(\""+PluginName+" Toolbar\"\\)\\;")==1){
+AutostartStatus="active";
+RowAutostartStatus=n;
+}// end of if
+} // end of for
+
+
+// Prompt user dialog
+Dialog.create(PluginName);
+Dialog.setInsets(0,0,0);
+Dialog.addMessage(PluginName+" Autostart is currently " +AutostartStatus+".");
+Dialog.setInsets(15,0,0);
+Dialog.addMessage("What would you like to do?");
+Dialog.setInsets(0,0,0);
+// If the status is active propose 2 choices
+if(AutostartStatus=="active"){
+  AutostartOptionArray=newArray("Keep "+PluginName+" Autostart Active", "Remove "+PluginName+" Autostart");
+  Dialog.addRadioButtonGroup("", AutostartOptionArray,2,1,"Keep "+PluginName+" Autostart Active");
+// if status is inactive propose two other choices
+} else if (AutostartStatus=="inactive"){
+  AutostartOptionArray=newArray("Activate "+PluginName+" Autostart", "Keep "+PluginName+" Autostart OFF for now");
+  Dialog.addRadioButtonGroup("", AutostartOptionArray,2,1,"Activate "+PluginName+" Autostart");
+}
+Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
+Dialog.show();
+AutostartChoice = Dialog.getRadioButton();
+
+
+if (AutostartChoice=="Keep "+PluginName+" Autostart Active" || AutostartChoice=="Keep "+PluginName+" Autostart OFF for now"){
+// do nothing
+// if user wants to remove autostart
+} else if (AutostartChoice=="Remove "+PluginName+" Autostart"){
+
+  //Create an empty string
+  NewStartUpMacroContent="";
+// Reconstruct the StartUpMacro omitting the Rowwith from the array
+for (n=0; n<StartUpMacroContentArray.length; n++){
+if(n==RowAutostartStatus){
+//do nothing
+} else {
+  // reconstruct the autostart from the array
+  NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
+} // end of if
+} // end of for
+// Save the File startup with the new content
+File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
+
+
+
+///////////////////// Initial Dialog Box
+Dialog.create(PluginName+" Information");
+Dialog.setInsets(10, 0, 00);
+Dialog.addMessage("To validate the modification ImageJ needs to restart.");
+Dialog.setInsets(10, 60, 00);
+Dialog.addMessage("Do you want to quit ImageJ now?");
+Dialog.setInsets(0, 120, 0);
+Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
+Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
+Dialog.show();
+RestartChoice=Dialog.getRadioButton();
+if(RestartChoice=="Quit"){run("Quit");}
+
+// if user wants to activate autostart
+} else if (AutostartChoice=="Activate "+PluginName+" Autostart"){
+//Create an empty string
+NewStartUpMacroContent="";
+// reconstruct the autostart from the array
+for (n=0; n<StartUpMacroContentArray.length; n++){
+NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
+}
+// add the  autostart at the end
+NewStartUpMacroContent=NewStartUpMacroContent+"run(\""+PluginName+" Toolbar\")\;"+"\n";
+// Save the File startup with the new content
+File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
+if (!isOpen(PluginName+" Toolbar")){
+run(PluginName+" Toolbar");
+selectWindow(PluginName+" Toolbar");
+setLocation(IJPosX+IJSizeX+Spacer,IJPosY);
+}
+
+
+///////////////////// Closing Dialog Box
+Dialog.create(PluginName+" Information");
+Dialog.setInsets(10, 0, 00);
+Dialog.addMessage("To validate the modification ImageJ needs to restart.");
+Dialog.setInsets(10, 60, 00);
+Dialog.addMessage("Do you want to quit ImageJ now?");
+
+Dialog.setInsets(0, 120, 0);
+Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
+Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
+Dialog.show();
+RestartChoice=Dialog.getRadioButton();
+if(RestartChoice=="Quit"){run("Quit");}

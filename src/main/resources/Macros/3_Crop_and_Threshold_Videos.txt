@@ -1,0 +1,433 @@
+// Function written by Nicolas Stifani nstifani@gmail.com for more info
+
+// Header
+requires("1.50f");
+PluginName="KinemaJ";
+MacroName="Crop and Threshold Videos";
+
+
+// Set the Default Parameters
+run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack displays redirect=None decimal=9");
+run("Input/Output...", "jpeg=100 gif=-1 file=.csv use skip copy_column copy_row save_column save_row");
+run("Misc...", "divide=Infinity hide");
+
+// Make the ImageJ preferences for threshold visualisation as Red over background
+call("ij.Prefs.set", "threshold.mode", 0);
+// Set IJ Size and position
+IJPosX=screenWidth*0.1; // The position of ImageJ in X
+IJPosY=screenHeight*0;
+IJSizeX=575; // The width of ImageJ in pixel
+IJSizeY=100;
+Spacer=20; // A spacer
+DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");"); // Adjust the position of the ImageJ bar
+
+// Set MultiCh Toolbar Size and position
+ToolbarSizeX=240; // Size of the toolbar
+ToolbarSizeY=170;
+ToolbarPosX=IJPosX+IJSizeX+Spacer;
+ToolbarPosY=IJPosY;
+
+ListWindows=getList("window.titles");
+for(n=0; n<ListWindows.length; n++){
+  WindowN=ListWindows[n];
+  if(WindowN==PluginName+" Toolbar"){
+    // If tool bar is present place it next to the IJ bar
+    selectWindow(PluginName+" Toolbar");
+    setLocation(ToolbarPosX,ToolbarPosY);
+  }
+}
+
+//Set Threshold Window Size and Position
+ThresholdSizeX=290;
+ThresholdSizeY=260;
+ThresholdPosX=ToolbarPosX; // The Position in X of the threshold window
+ThresholdPosY=ToolbarPosY+ToolbarSizeY+Spacer;
+call("ij.Prefs.set", "threshold.loc", ThresholdPosX+" , "+ThresholdPosY);
+
+// Set ROI Manager Size and Position
+ROIManagerSizeX=290;
+ROIManagerSizeY=260;
+ROIManagerPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+ROIManagerPosY=ThresholdPosY;
+call("ij.Prefs.set", "manager.loc", ROIManagerPosX+" , "+ROIManagerPosY);
+
+// Set Results Size and Position
+ResultsSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
+ResultsSizeY=ToolbarSizeY;
+ResultsPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+ResultsPosY=ToolbarPosY;
+call("ij.Prefs.set", "results.loc", ResultsPosX+" , "+ResultsPosY);
+call("ij.Prefs.set", "results.width", ResultsSizeX);
+call("ij.Prefs.set", "results.height", ResultsSizeY);
+
+
+//////////////////////////// Initial Dialog Box
+Dialog.create(PluginName+" Information");
+Dialog.setInsets(0,0,0);
+Dialog.addMessage("The Function "+MacroName+" will:"
++"\n - Prompt to select a Folder containing at least "+MinNbFile+" "+FileExt+" Files"
++"\n - Open the CSV File containing ROI Coordinates and Threshold Values or prompt to select it"
++"\n - Open all "+FileExt+" Files 1 by 1 within the selected Folder"
++"\n - Crop and Threshold the videos with the values found in the CSV file"
++"\n - Save Videos as TIF Files");
+Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
+Dialog.show();
+//////////////////////////// End of Initial Dialog Box
+
+function SelectInputDir(MinNbFile, FileExt){
+  // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
+  // FileExt This is the File extension as a string example ".tif"
+  // InputList is ALL the Files within the input Directory
+  // InputFileList is the list of Files with the correct File extension
+
+  /////////////////////// Select Input Directory
+  InputDirPath=getDirectory("Select the FOLDER containing at least "+MinNbFile+" "+FileExt+" File to process.");
+  InputList=getFileList(InputDirPath);
+  ParentDir=File.getParent(InputDirPath)+File.separator;
+  InputDirName=File.getName(InputDirPath);
+  /////////////////////// Select Input Directory
+
+  NbFile=0;
+  // Evaluate the Nb of File
+  for (ItemI=0; ItemI<InputList.length; ItemI++){
+    if(endsWith(toLowerCase(InputList[ItemI]), "."+toLowerCase(FileExt))){
+      Basename=split(InputList[ItemI],".");
+      if(Basename.length!=2){
+        exit(PluginName+" Information\nThe Function "+MacroName+" stopped because the File \""+InputList[ItemI]+"\" contains more than one \".\"\nMake sure filnames have no \".\" at the exception of File extension.");
+      }
+
+      NbFile++;
+    } // If ends by Extension increment nbTFile
+  }
+  InputDirPass=0; // This is the Value switch if the InputDir is passing the criteria
+  if (NbFile<MinNbFile){
+    Dialog.create(PluginName+" Information");
+    Dialog.setInsets(0, 0, 0);
+    Dialog.addMessage("Sorry but the Folder: \"" +InputDirName+"\" does not contain at least "+MinNbFile+" "+FileExt+" File.");
+    Dialog.setInsets(0, 0, 0);
+    Dialog.addMessage(MacroName+" requires a Folder that contains at least "+MinNbFile+" "+FileExt+" File.");
+    Dialog.setInsets(0, 0, 0);
+    TryAgainCancelCloseArray=newArray("Try Again", "Cancel & Close");
+    Dialog.setInsets(0, 100, 0);
+    Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2, 1, "Try Again");
+    Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
+    Dialog.show();
+    UserChoice=Dialog.getRadioButton();
+    if (UserChoice=="Cancel & Close"){
+      exit(PluginName+ " Information:\nThe function "+ MacroName+" stopped because the Folder: \"" +InputDirName+"\" did not contain at least "+MinNbFile+" "+FileExt+" File.");
+    } /////////////////////// End user choice
+  } else { // else of if NbFile is at least equal to the min Nb of File
+    InputDirPass=1;
+    InputFileList=newArray(NbFile);
+    n=0;
+    for(i=0; i<InputList.length;i++){
+      if (endsWith(toLowerCase(InputList[i]),"."+toLowerCase(FileExt))==1){
+        InputFileList[n]=InputList[i];
+        n++;
+      }// end of IF endswith
+    }// end for each File
+  } // end of else
+} // End of Function Select InputDir
+
+function CreateOutputDir(FolderSuffix){
+  OutputDirPath=ParentDir+InputDirName+"_"+FolderSuffix+File.separator;
+  n=1;
+  while(File.exists(OutputDirPath)!=0){
+    n++;
+    OutputDirPath=ParentDir+InputDirName+"_"+FolderSuffix+"_"+n+File.separator;
+  }
+  File.makeDirectory(OutputDirPath);
+  OutputDirName=File.getName(OutputDirPath);
+}
+
+function CreateOutputSubDir(SubDirArray) {
+  for(i=0;i<SubDirArray.length;i++){
+    SubDirPath=OutputDirPath+SubDirArray[i]+File.separator;
+    File.makeDirectory(SubDirPath);
+  } // End of for
+} // End of CreateOutputSubDir function
+
+
+// Defines Global Variables
+var MinNbFile=1;
+var FileExt="AVI";
+var InputDirPass;
+var InputDirPath;
+var ParentDir;
+var InputDirName;
+var NbFile;
+var InputFileList; // This is the List of File with the correct extension
+do{
+  SelectInputDir(MinNbFile,FileExt);
+}while(InputDirPass!=1)
+
+
+///////////////////////////// Look for CSV File
+ParentDirList=getFileList(ParentDir);
+NbPotentialCSV=0;
+for(n=0;n<ParentDirList.length;n++){
+  ItemName=ParentDirList[n];
+  if(matches(ItemName, InputDirName+"_ROI and Threshold Values/?_?[0-9]*/?")){
+    NbPotentialCSV++;
+    ItemNumber=n;
+  }
+}
+
+////////// If only one ROI and Threshold Value folder is present pick the CSV file in it
+if(NbPotentialCSV==1){
+  CSVFilePath=ParentDir+ParentDirList[ItemNumber]+"ROI and Threshold Values.CSV";
+} else if(NbPotentialCSV!=1){
+  CSVFilePath=File.openDialog("Select the CSV File containing ROI Coordinates and Threshold Values");
+}
+
+
+// Criteria to check CSV file
+RequiredHeaderPass=0;
+RequiredFilePass=0;
+RequiredHeaderList=newArray("Filename", "ROIPosX", "ROIPosY", "ROIWidth","ROIHeight", "LowerValue","UpperValue");
+RequiredFileList=InputFileList;
+
+// Check CSV file integrity
+while((endsWith(toLowerCase(CSVFilePath), ".csv")!=1) || (RequiredHeaderPass!=RequiredHeaderList.length) || (RequiredFilePass!=RequiredFileList.length)){
+  // if it is not a CSV
+  if(endsWith(toLowerCase(CSVFilePath), ".csv")!=1){
+    Dialog.create(PluginName+" Information");
+    Dialog.setInsets(0, 0, 0);
+    Dialog.addMessage("Sorry but \""+File.getName(CSVFilePath)+"\" is not a CSV File.");
+    TryAgainCancelCloseArray=newArray("Try again", "Cancel and Close");
+    Dialog.setInsets(5, 150, 0);
+    Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
+    Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
+    // Display the Dialog and get user choice
+    Dialog.show();
+    UserChoice = Dialog.getRadioButton();
+    if (UserChoice=="Cancel and Close"){
+      exit(PluginName+" "+MacroName+" stopped because \"" +File.getName(CSVFilePath)+"\" is not a CSV File.");
+    }
+  } else if(endsWith(toLowerCase(CSVFilePath), ".csv")==1){ // if it ends by CSV then
+    // Evaluate the header
+    open(CSVFilePath);
+    CSVFileHeadingArray=split(String.getResultsHeadings);
+    if(isOpen("Results")){
+      run("Clear Results");
+      selectWindow("Results");
+      run("Close");
+    }
+
+    RequiredHeaderPass=0;
+    // Transform the Header Array into a string
+    CSVFileHeadingString="";
+    for (n=0; n<CSVFileHeadingArray.length; n++){
+      CSVFileHeadingString=CSVFileHeadingString+"\n"+CSVFileHeadingArray[n];
+    }
+
+
+    for (ItemI=0; ItemI<RequiredHeaderList.length; ItemI++){ // Screen the RequiredItem List
+      if(indexOf(CSVFileHeadingString , RequiredHeaderList[ItemI])>0){ // if RequiredItem is Present in the ItemList
+        RequiredHeaderPass++;
+      } // end of If present increment
+    } // end of for
+
+    // If header is not good
+    if(RequiredHeaderPass!=RequiredHeaderList.length){
+      Dialog.create(PluginName+" Information");
+      Dialog.setInsets(0, 0, 0);
+      Dialog.addMessage("Sorry but \""+File.getName(CSVFilePath)+"\" does not contain the required columns.");
+      for (n=0;n<RequiredHeaderList.length;n++){
+        if(n==0){
+          RequiredMessageHeader=RequiredHeaderList[n];;
+        } else if (n>0){
+          RequiredMessageHeader=RequiredMessageHeader+", "+RequiredHeaderList[n];
+        }
+      }
+      Dialog.setInsets(0, 0, 0);
+      Dialog.addMessage("The required columns are:\n"+RequiredMessageHeader+".");
+      TryAgainCancelCloseArray=newArray("Try again", "Cancel and Close");
+      Dialog.setInsets(5, 150, 0);
+      Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
+      Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
+      // Display the Dialog and get user choice
+      Dialog.show();
+      UserChoice = Dialog.getRadioButton();
+      if (UserChoice=="Cancel and Close"){
+        exit(PluginName+" "+MacroName+" stopped because " +File.getName(CSVFilePath)+" did not contain the required columns.");
+      }
+    }  // end of prompt if header is not good
+
+    // if it is a CSV and the header is correct check that all files have values
+    if(RequiredHeaderPass==RequiredHeaderList.length){
+      // Create an array of the FileName from the CSV file
+      open(CSVFilePath);
+      FileNameArray = newArray(nResults);
+      for (n=0;n<nResults;n++){
+        FileNameArray[n] = getResultString("Filename", n);
+      } // end of populating the array
+      if(isOpen("Results")){
+        run("Clear Results");
+        selectWindow("Results");
+        run("Close");
+      }
+
+
+
+      RequiredFilePass=0;
+      FileNameString="";
+      for (n=0; n<FileNameArray.length; n++){
+        FileNameString=FileNameString+"\n"+FileNameArray[n];
+      }
+      for (ItemI=0; ItemI<RequiredFileList.length; ItemI++){ // Screen the RequiredItem List
+        BasenameIArray=split(RequiredFileList[ItemI],".");
+        if(indexOf(FileNameString , BasenameIArray[0])>0){ // if RequiredItem is Present in the ItemList
+          RequiredFilePass++;
+        } // end of If present increment
+      } // end of for
+
+      // If some input file do not have data in the CSV
+      if(RequiredFilePass!=RequiredFileList.length){
+
+        Dialog.create(PluginName+" Information");
+        Dialog.setInsets(0, 0, 0);
+        Dialog.addMessage("Sorry but \""+File.getName(CSVFilePath)+"\" does not contain values for all the selected "+FileExt+" Files.");
+        TryAgainCancelCloseArray=newArßray("Try again", "Cancel and Close");
+        Dialog.setInsets(5, 150, 0);
+        Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
+        Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
+        // Display the Dialog and get user choice
+        Dialog.show();
+        UserChoice = Dialog.getRadioButton();
+        if (UserChoice=="Cancel and Close"){
+          exit(PluginName+" "+MacroName+" stopped because \"" +File.getName(CSVFilePath)+"\" did not contain values for all the selected "+FileExt" Files.");
+        }
+      } else if (RequiredFilePass==RequiredFileList.length){ // if it passes all requirements
+        UserChoice=""; // do not prompt
+      } // End if values for processing all input files are not present
+    } // End of If Header is correct
+  } // End of if it is CSV
+
+  // If file not correct prompt to select a new CSV file
+  if (UserChoice=="Try again"){
+    CSVFilePath=File.openDialog("Select the CSV File containing ROI Coordinates and Threshold Values");
+    RequiredHeaderPass=0;
+    RequiredFilePass=0;
+  }
+} // End of While loop checking for CSV file integrity
+////////// End of If ROI and Threshold Value folder is ambiguous
+
+
+
+////////////////////////////// Read the CSV File
+open(CSVFilePath);
+CellSeparator= ",";
+LineSeparator="\n";
+// Create arrays
+FileNameArray = newArray(nResults);
+ROIPosXArray = newArray(nResults);
+ROIPosYArray = newArray(nResults);
+ROIWidthArray = newArray(nResults);
+ROIHeightArray = newArray(nResults);
+LowerValueArray = newArray(nResults);
+UpperValueArray = newArray(nResults);
+// Populate the Array with the results
+for (n=0;n<nResults;n++){
+  FileNameArray[n] = getResultString("Filename", n);
+  ROIPosXArray[n] = getResult("ROIPosX",n);
+  ROIPosYArray[n] = getResult("ROIPosY",n);
+  ROIWidthArray[n] = getResult("ROIWidth",n);
+  ROIHeightArray[n] = getResult("ROIHeight",n);
+  LowerValueArray[n] = getResult("LowerValue",n);
+  UpperValueArray[n] = getResult("UpperValue",n);
+}// end of populating the arrays
+
+
+// Close results windows if it is open
+if(isOpen("Results")){
+  run("Clear Results");
+  selectWindow("Results");
+  run("Close");
+}//end of if Results is open
+////////////////////////////// End of Read the CSV File
+
+
+
+
+
+// Create OutputDirectory with the Folder suffix
+var OutputDirPath;
+var OutputDirName;
+var FolderSuffix="Cropped and Thresholded";
+CreateOutputDir(FolderSuffix);
+
+// Create Output Subdirectory and create general variables for each SubdirectoryOuputdir Path
+var SubDirArray=newArray("Cropped","Thresholded");
+CreateOutputSubDir(SubDirArray);
+//////////////////////////// End of Create an unique output directory
+OutputDirPathCropped=""+OutputDirPath+"Cropped"+File.separator;
+OutputDirPathThresholded=""+OutputDirPath+"Thresholded"+File.separator;
+
+
+setBatchMode(true);
+//////////////////////////// Process each File
+for (Filei = 0; Filei < InputFileList.length; Filei++){
+  InputFileNamei = InputFileList[Filei];
+  InputFilePathi = InputDirPath+InputFileNamei;
+  Basename=split(InputFileNamei, ".");
+  InputFileNameiNoExt=Basename[0];
+
+  ///////////// Look for the matching filename in the arrays and get the values
+  Rowi=0;
+  while(FileNameArray[Rowi]!=InputFileNameiNoExt){
+    Rowi++;
+  }
+  FileNameRowi = FileNameArray[Rowi];
+  ROIPosX = ROIPosXArray[Rowi];
+  ROIPosY = ROIPosYArray[Rowi];
+  ROIWidth = ROIWidthArray[Rowi];
+  ROIHeight = ROIHeightArray[Rowi];
+  LowerValue = LowerValueArray[Rowi];
+  UpperValue = UpperValueArray[Rowi];
+
+
+  // Open avi File
+  run("AVI...", "select=&InputFilePathi use convert");
+
+  makeRectangle(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
+  run("Crop");
+  saveAs("Tif", OutputDirPathCropped+InputFileNameiNoExt);
+
+  // Transform to 8 bit and Threshold
+  run("8-bit");
+  setThreshold(LowerValue, UpperValue, "BlackBackground");
+  run("Convert to Mask", "stack");
+  saveAs("Tif", OutputDirPathThresholded+InputFileNameiNoExt);
+  close();
+
+
+  // Update the progress bar
+  showProgress(Filei, InputFileList.length);
+}/////////////////////End of for Filei loop
+
+// Close Threshold windows if it is open
+if(isOpen("Threshold")){
+  selectWindow("Threshold");
+  run("Close");
+}//end of if threshold is open
+
+// Close results windows if it is open
+if(isOpen("Results")){
+  run("Clear Results");
+  selectWindow("Results");
+  run("Close");
+}//end of if Results is open
+
+beep();
+
+///////////////////// Closing Dialog Box
+Dialog.create(PluginName+" Information");
+Dialog.setInsets(0, 0, 0);
+Dialog.addMessage(NbFile+" "+ FileExt+ " File in the Folder: \"" +InputDirName+"\" have been processed successfully.");
+Dialog.setInsets(10, 0, 0);
+Dialog.addMessage("ROI Coordinates and Threshold Values were provided by: \""+File.getName(CSVFilePath)+"\"");
+Dialog.setInsets(10, 0, 0);
+Dialog.addMessage("Files are saved in the Folder: \""+OutputDirName+"\".");
+Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
+Dialog.show();
