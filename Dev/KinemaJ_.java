@@ -11,7 +11,7 @@ import java.awt.image.IndexColorModel;
 
 
 public class KinemaJ_ implements PlugIn {
-  String path = "/KinemaJ_Macros/";
+  String path = "/Macros/";
   static boolean showArgs = true;
 
   public void run(String arg) {

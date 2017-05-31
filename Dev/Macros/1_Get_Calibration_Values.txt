@@ -502,7 +502,7 @@ CreateOutputSubDir(SubDirArray);
 OutputImagePath=""+OutputDirPath+"Calibrated Images"+File.separator;
 
 //////////////////////////// Create an Result TXT File
-  TXTFileName=""+InputDirName+"_"+"Calibration Values";
+  TXTFileName="Calibration Values";
   TXTFilePath=OutputDirPath+TXTFileName+".txt";
   TXTFile = File.open(TXTFilePath);
   print(TXTFile, "Filename"+CellSeparator+"Width (pixel)"+CellSeparator+"Height (pixel)"+CellSeparator+"Width (cm)"+CellSeparator+"Height (cm)"+LineSeparator);
@@ -519,6 +519,7 @@ for (FileI = 0; FileI < InputFileList.length; FileI++){
   run("AVI...", "select=&InputFilePathI last=1 use convert"); // Open as AVI use virtual memory and convert to gray scale
   // Remove the scale to have coordinates in pixels
   run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");
+
   /////////////// Try to detect the 4 markers
   selectWindow(InputFileNameI);
   run("Duplicate...", "title=AutoDetect");
@@ -526,6 +527,9 @@ for (FileI = 0; FileI < InputFileList.length; FileI++){
   run("Auto Threshold...", "method=Shanbhag white"); // Threshold
   run("Convert to Mask");
   run("Open"); // Remove noise
+
+  // Set the required mesurements parameters
+  run("Set Measurements...", "centroid redirect=None decimal=9");
   // Detect circular markers
   selectWindow("AutoDetect");
   run("Analyze Particles...", "size=80-500 circularity=0.90-1.00 display clear");
@@ -536,8 +540,8 @@ for (FileI = 0; FileI < InputFileList.length; FileI++){
 MarkerX=newArray(0);
 MarkerY=newArray(0);
 for (ResultI=0; ResultI<nResults; ResultI++){
-      X=getResult("XM",ResultI);
-      Y=getResult("YM",ResultI); // Y coordinates are inverted
+      X=getResult("X",ResultI);
+      Y=getResult("Y",ResultI); // Y coordinates are inverted
       MarkerX=Append(MarkerX,X);
       MarkerY=Append(MarkerY,Y);
     }
@@ -561,6 +565,9 @@ for (ResultI=0; ResultI<nResults; ResultI++){
   // Once a rectangular selection is done
   setBatchMode("hide");
   run("Clear Results");
+  // Set the required mesurements parameters
+  run("Set Measurements...", "bounding redirect=None decimal=9");
+
   run("Measure");
 
   // Get the Values of the rectangular selection
@@ -572,7 +579,7 @@ for (ResultI=0; ResultI<nResults; ResultI++){
 }////////////// end of if 4 markers could not be automatically detected
 
 ///////////// Append the coordinates to the CSV File
-File.append(TXTFile, InputFileNameINoExt+CellSeparator+Width+CellSeparator+Height+CellSeparator+RealWidthCm+CellSeparator+RealHeightCm+LineSeparator);
+File.append(InputFileNameINoExt+CellSeparator+Width+CellSeparator+Height+CellSeparator+RealWidthCm+CellSeparator+RealHeightCm,TXTFilePath);
 
 ////////////// Add the selection as an overlay
 selectWindow(InputFileNameI);
@@ -588,7 +595,7 @@ close();
 // Update the progress bar
 showProgress(FileI, InputFileList.length);
 // Close results windows if it is open
-if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");}
+//if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");}
 }/////////////////////End of for Filei loop
 
 CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName);
