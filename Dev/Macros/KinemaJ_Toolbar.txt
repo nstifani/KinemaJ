@@ -23,21 +23,28 @@ run("Get Calibration Values");
 
 <line>
 <button>1 line 2
-label=2 Get ROI & Threshold
+label=2a Get ROI & Threshold Values
 icon=noicon
 arg=<macro>
 run("Get ROI and Threshold Values");
 </macro>
-</line>
 
-<line>
-<button>1 line 3
-label=3 Crop & Threshold
+<button>2 line 2
+label=2b Crop & Threshold Videos
 icon=noicon
 arg=<macro>
 run("Crop and Threshold Videos");
 </macro>
 </line>
+<line>
+<button>1 line 3
+label=2 Pre-Process Videos
+icon=noicon
+arg=<macro>
+run("Pre-process Videos");
+</macro>
+</line>
+
 
 <line>
 <button>1 line 4
