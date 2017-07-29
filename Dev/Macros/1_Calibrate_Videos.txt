@@ -3,7 +3,7 @@
 // Defines Global Variables
 requires("1.51n");
 var PluginName="KinemaJ";
-var MacroName="Get Calibration Values";
+var MacroName="Calibrate Videos";
 var FileExt="AVI";
 var MinNbFile=1;
 var FolderSuffix="Calibrated";
@@ -269,7 +269,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n \""+InputDirName+"\"\nhave been processed successfully.");
+  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
   Dialog.setInsets(0, 0, 0);
