@@ -16,31 +16,35 @@ public class KinemaJ_ implements PlugIn {
 
   public void run(String arg) {
     String msg = "";
-    if (arg.equals("Get Calibration Values"))
-    {getCalibration(); return;}
+    if (arg.equals("Calibrate"))
+    {Calibrate(); return;}
+    if (arg.equals("Preprocess"))
+    {Preprocess(); return;}
     else if (arg.equals("Get ROI and Threshold Values"))
-    {getROIandThreshold(); return;}
+    {GetROIandThreshold(); return;}
     else if (arg.equals("Crop and Threshold Videos"))
-    {cropandThresholdVideo(); return;}
-    else if (arg.equals("Track Markers"))
-    {trackVideo(); return;}
+    {CropandThresholdVideos(); return;}
+    else if (arg.equals("Track"))
+    {TrackVideos(); return;}
     else if (arg.equals("Toggle Autostart"))
     {ToggleAutostart(); return;}
   }
 
 
-  void getCalibration() {
-    IJ.runMacro(getText(path+"1_Get_Calibration_Values.txt"), "");
+  void Calibrate() {
+    IJ.runMacro(getText(path+"1_Calibrate_Videos.txt"), "");
   }
-
-  void getROIandThreshold() {
-    IJ.runMacro(getText(path+"2_Get_ROI_and_Threshold_Values.txt"), "");
+  void Preprocess() {
+    IJ.runMacro(getText(path+"2_Pre-process_Videos.txt"), "");
   }
-  void cropandThresholdVideo() {
-    IJ.runMacro(getText(path+"3_Crop_and_Threshold_Videos.txt"), "");
+  void GetROIandThreshold() {
+    IJ.runMacro(getText(path+"2a_Get_ROI_and_Threshold_Values.txt"), "");
   }
-  void trackVideo() {
-    IJ.runMacro(getText(path+"4_Track_Markers.txt"), "");
+  void CropandThresholdVideos() {
+    IJ.runMacro(getText(path+"2b_Crop_and_Threshold_Videos.txt"), "");
+  }
+  void TrackVideos() {
+    IJ.runMacro(getText(path+"3_Track_Markers.txt"), "");
   }
   void ToggleAutostart() {
     IJ.runMacro(getText(path+"Toggle_KinemaJ_Toolbar_Autostart.txt"), "");

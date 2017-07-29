@@ -1,4 +1,3 @@
-@@ -0,0 +1,385 @@
 // Function written by Nicolas Stifani nstifani@gmail.com for more info
 
 // Header

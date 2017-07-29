@@ -14,28 +14,29 @@ setLocation(IJPosX+IJSizeX+Spacer,IJPosY);
 
 <line>
 <button>1 line 1
-label=1 Calibrate
+label=1 Calibrate Videos
 icon=noicon
 arg=<macro>
-run("Get Calibration Values");
+run("Calibrate Videos");
 </macro>
 </line>
 
-<line>
-<button>1 line 2
-label=2a Get ROI & Threshold Values
-icon=noicon
-arg=<macro>
-run("Get ROI and Threshold Values");
-</macro>
+//<line>
+//<button>1 line 2
+//label=2a Get ROI & Threshold Values
+//icon=noicon
+//arg=<macro>
+//run("Get ROI and Threshold Values");
+//</macro>
 
-<button>2 line 2
-label=2b Crop & Threshold Videos
-icon=noicon
-arg=<macro>
-run("Crop and Threshold Videos");
-</macro>
-</line>
+//<button>2 line 2
+//label=2b Crop & Threshold Videos
+//icon=noicon
+//arg=<macro>
+//run("Crop and Threshold Videos");
+//</macro>
+//</line>
+
 <line>
 <button>1 line 3
 label=2 Pre-Process Videos
@@ -48,7 +49,7 @@ run("Pre-process Videos");
 
 <line>
 <button>1 line 4
-label=4 Track Markers
+label=3 Track Markers
 icon=noicon
 arg=<macro>
 run("Track Markers");

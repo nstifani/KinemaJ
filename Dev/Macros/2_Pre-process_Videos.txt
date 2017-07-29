@@ -96,6 +96,8 @@ BCPosY=ROIManagerPosY;
 call("ij.Prefs.set", "b&c.loc", BCPosX+" , "+BCPosY);
 //////////////// Header and Housekeeping
 
+
+
 //////////////// General Functions
 // Function to Append to an array
 function Append(ArrayI, Value) {
@@ -155,7 +157,7 @@ var NbFile;
 function SelectInputDir(MinNbFile, FileExt){
   // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
   // FileExt This is the File extension as a string example "tif"
-  InputDirPath=getDirectory("Select a FOLDER containing at least "+MinNbFile+" "+FileExt+" Files to process."); // Select a Folder
+  InputDirPath=getDirectory("Select a FOLDER containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a Folder
   InputItemList=getFileList(InputDirPath); // List of Item in the selected folder
   ParentDir=File.getParent(InputDirPath)+File.separator;
   InputDirName=File.getName(InputDirPath);
@@ -164,6 +166,7 @@ function SelectInputDir(MinNbFile, FileExt){
   NbFileWithCorrectExt=0; // Count of Nb of Files
   BaseNameError=0; // Switch to make sure there is only one "." in the filename
   InputCorrectExtFileList=newArray(0);
+  UserResponseErrorDialog="";
 
   // Evaluate the Nb of File with correct extension and add them to InputCorrectExtFileList
   for (ItemI=0; ItemI<InputItemList.length; ItemI++){
@@ -173,26 +176,26 @@ function SelectInputDir(MinNbFile, FileExt){
   }
   NbFileWithCorrectExt=InputCorrectExtFileList.length;
   if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
-    MessageError="Sorry but the Folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" File.";
-    MessageFix=MacroName+" requires a Folder that contains at least "+MinNbFile+" "+FileExt+" File.";
+    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
     ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-    MessageQuit=PluginName+ " Information:\nThe function "+ MacroName+" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File.";
-    ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-
+    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
     if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
       CleanExit(MessageQuit);
-    } else {
+    } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
+      SelectInputDirPass=0;
     }
   } else { // if NbFileWithCorrectExt is above or equal MinNbFile Evaluate Filenames
     InputFileList=newArray(0);
     for (FileI=0; FileI<InputCorrectExtFileList.length; FileI++){
       BasenameFileIArray=split(InputCorrectExtFileList[FileI],"."); // Make an array from the filename
       if(BasenameFileIArray.length!=2){// if there is more than one . in the file name abort
-        MessageError="Sorry but the "+FileExt+" File:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
-        MessageFix=MacroName+" function does NOT allow filenames with more than one unique \".\" used for the file extension.";
+        MessageError="Sorry but the "+FileExt+" file:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
+        MessageFix="The function \""+MacroName+"\" does NOT allow filenames with more than one unique \".\" used for the file extension.";
         ErrorResponseArray=newArray("Select Another Folder", "Ignore This File", "Cancel and Close");
-        MessageQuit=PluginName+ " Information:\nThe function "+ MacroName+" stopped because the File \""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the File extension.";
-        ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+        MessageQuit="The function \""+ MacroName+"\" stopped because the file\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
+        UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
         if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
           CleanExit(MessageQuit);
         } else if (UserResponseErrorDialog=="Ignore This File"){
@@ -200,7 +203,7 @@ function SelectInputDir(MinNbFile, FileExt){
         } else if (UserResponseErrorDialog=="Select Another Folder") {
           FileI=InputCorrectExtFileList.length;
           SelectInputDirPass=0;
-          ErrorDialogPass=1;
+        //  ErrorDialogPass=1;
         }
       }else { // If basename is good add it to the InputFileList
         InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
@@ -208,18 +211,18 @@ function SelectInputDir(MinNbFile, FileExt){
     }
     // Make sure InpuFileList is > MinNbFile
     NbFile=InputFileList.length;
-    if(NbFile<MinNbFile && ErrorDialogPass!=1){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
+    if(NbFile<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
       MessageError="Sorry but the Folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" File with no more than one \".\" in its filename.";
-      MessageFix=MacroName+" requires a Folder that contains at least "+MinNbFile+" "+FileExt+" File with one unique \".\" used for the file extension.";
+      MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" File with one unique \".\" used for the file extension.";
       ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-      MessageQuit=PluginName+ " Information:\nThe function "+ MacroName+" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File no more than one \".\" in its filename.";
-      ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+      MessageQuit="The function \""+ MacroName+"\" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File no more than one \".\" in its filename.";
+      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
       if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
         CleanExit(MessageQuit);
       } else {
         SelectInputDirPass=0;
       }
-    } else if (ErrorDialogPass==1){
+    } else if (UserResponseErrorDialog=="Select Another Folder"){
       SelectInputDirPass=0; // InputDir Pass the criteria
     } else {
       SelectInputDirPass=1; // InputDir Pass the criteria
@@ -267,9 +270,9 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " Files in the folder:\n"+InputDirName+"\nhave been processed successfully.");
+  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n \""+InputDirName+"\"\nhave been processed successfully.");
   Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage("Files are saved in the following folder:\n"+OutputDirName+".");
+  Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
   Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
@@ -373,7 +376,7 @@ function SelectionPrompt(SelectionTypeName, SelectionInfo){
     MessageFix="What would you like to do?";
     ErrorResponseArray=newArray("Keep the current "+SelectionTypeName+" selection", "Adjust the current "+SelectionTypeName+" selection", "Discard the current "+SelectionTypeName+" selection", "Cancel and Close");
     MessageQuit="";
-    ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
     if(UserResponseErrorDialog==ErrorResponseArray[0]){
       SelectionPromptPass=1;
     } else if(UserResponseErrorDialog==ErrorResponseArray[1]){
@@ -403,6 +406,7 @@ function SelectionPrompt(SelectionTypeName, SelectionInfo){
     //   run("Point Tool...", "type=Hybrid color=White size=Large label show counter=0"); // Set the Point tool as yellow Medium Circle
     //   doCommand("Point Tool..."); // Bring the non-modal Point Tool at front in a separate thread
     // }
+    if(isOpen("Results")){        run("Clear Results");        selectWindow("Results");        run("Close");      }//end of if Results is open
     call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
     waitForUser(PluginName+" Information", "Draw a "+SelectionTypeName+" selection.\n"
     +SelectionInfo+
@@ -411,20 +415,20 @@ function SelectionPrompt(SelectionTypeName, SelectionInfo){
     if(CurrentSelection<0 || CurrentSelection!=SelectionValue){
       if(CurrentSelection<0){
         MessageError="Sorry but no "+SelectionTypeName+" selection was detected.";
-        MessageFix=MacroName+" function requires a "+SelectionTypeName+" selection.";
+        MessageFix="The function \""+MacroName+"\" requires a "+SelectionTypeName+" selection.";
         ErrorResponseArray=newArray("Create a "+SelectionTypeName+" selection", "Cancel and Close");
-        MessageQuit=PluginName+ " Information:\nThe function "+ MacroName+" stopped because no "+SelectionTypeName+" was detected.";
+        MessageQuit="The function \""+ MacroName+"\" stopped because no "+SelectionTypeName+" was detected.";
       } else if(CurrentSelection!=SelectionValue){
-        MessageError="Sorry but the Selection is not a "+SelectionTypeName+".";
-        MessageFix=MacroName+" function requires a "+SelectionTypeName+" selection.";
+        MessageError="Sorry but the selection is not a "+SelectionTypeName+".";
+        MessageFix="The function \""+MacroName+"\" requires a "+SelectionTypeName+" selection.";
         ErrorResponseArray=newArray("Create a "+SelectionTypeName+" selection", "Cancel and Close");
-        MessageQuit=PluginName+ " Information:\nThe function "+ MacroName+" stopped because the provided selection was not a "+SelectionTypeName+".";
+        MessageQuit="The function \""+ MacroName+"\" stopped because the provided selection was not a "+SelectionTypeName+".";
       }
       setBatchMode("show");
 
       // Close results windows if it is open
       if(isOpen("Results")){        run("Clear Results");        selectWindow("Results");        run("Close");      }//end of if Results is open
-      ErrorDialog(MessageError,MessageFix, ErrorResponseArray);
+      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
       if(UserResponseErrorDialog==ErrorResponseArray[0]){
         run("Select None");
         SelectionPromptPass=0;
@@ -442,9 +446,11 @@ function SelectionPrompt(SelectionTypeName, SelectionInfo){
 
 // Macro starts here
 // Intial Message
-InitialMessage=""+MacroName+" will:"
+InitialMessage="The function \""+MacroName+"\" will:"
++"\n - Prompt to select a folder containing at least "+MinNbFile+" "+FileExt+" calibration file(s) to process"
++"\n\nFor each "+FileExt+" file:"
 +"\n - Prompt to adjust the threshold values"
-+"\n - Prompt to select the Region of interest"
++"\n - Prompt to select the region of interest"
 +"\n - Cropped Videos"
 +"\n - Threshold Videos";
 
