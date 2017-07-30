@@ -270,7 +270,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n \""+InputDirName+"\"\nhave been processed successfully.");
+  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
   Dialog.setInsets(0, 0, 0);
@@ -452,7 +452,7 @@ InitialMessage="The function \""+MacroName+"\" will:"
 +"\n - Prompt to adjust the threshold values"
 +"\n - Prompt to select the region of interest"
 +"\n - Cropped Videos"
-+"\n - Threshold Videos";
++"\n - Cropped and Threshold Videos";
 
 MessageDialog(InitialMessage); // Display the Initial Message
 
@@ -486,7 +486,7 @@ ROIWidthArray = newArray(0);
 ROIHeightArray = newArray(0);
 ThresholdLowerValueArray = newArray(0);
 ThresholdUpperValueArray = newArray(0);
-
+NbSliceArray = newArray(0);
 
   //////////////////////////// Part 1 Get Threshold Values and Crop Dimension for each file
   for (FileI = 0; FileI < InputFileList.length; FileI++){
@@ -522,6 +522,9 @@ ThresholdUpperValueArray = newArray(0);
   setBatchMode("hide");
   // Get the Threshold Values
   getThreshold(ThresholdLowerValue,ThresholdUpperValue);
+
+// Save the Nubmer of Slices
+  NbSliceArray=Append(NbSliceArray, nSlices);
 
 ////// Get the ROI
 // Reduce the Reduce the number of Frames (Slices) and project the MIP
@@ -614,8 +617,8 @@ close();
   File.append(InputFileNameINoExt+CellSeparator+ROIPosX+CellSeparator+ROIPosY+CellSeparator+ROIWidth+CellSeparator+ROIHeight+CellSeparator+ThresholdLowerValue+CellSeparator+ThresholdUpperValue,TXTFilePath);
 
 // Write the values to the arrays
-  FileNameArray=Append(FileNameArray,InputFileNameINoExt);
-  ROIPosXArray=Append(ROIPosXArray,ROIPosX);
+FileNameArray=Append(FileNameArray,InputFileNameINoExt);
+ROIPosXArray=Append(ROIPosXArray,ROIPosX);
 ROIPosYArray=Append(ROIPosYArray,ROIPosY);
 ROIWidthArray=Append(ROIWidthArray,ROIWidth);
 ROIHeightArray=Append(ROIHeightArray,ROIHeight);
@@ -630,11 +633,20 @@ ThresholdUpperValueArray=Append(ThresholdUpperValueArray,ThresholdUpperValue);
 
 /////////////// Part 2 Crop and Threhsold Videos
 
+// Message this process can be long
 
-
-//setBatchMode(true);
+Array.getStatistics(NbSliceArray, MinNbSlice, MaxNbSlice, MeanNbSlice, StdDevNbSlice);
+TotalNbSlice=round(MeanNbSlice * NbSliceArray.length);
+ExpectedProcessingDuration=TotalNbSlice/2000; // Should be able to treat 2000 frames per minute
+call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+waitForUser(PluginName+" Information", "The function \""+MacroName+"\" will now process your file(s).\n"
++"A total of "+TotalNbSlice+" frames will be processed which should take about "+ExpectedProcessingDuration+" minutes.\nPlease be patient."
++"\nTo start the process, press OK.");
+TimeStart=getTime();
+setBatchMode(true);
 //////////////////////////// Process each File
 for (FileI = 0; FileI < InputFileList.length; FileI++){
+
   InputFileNameI=InputFileList[FileI];
   BasenameArray=split(InputFileNameI,".");
   InputFileNameINoExt=BasenameArray[0];
@@ -668,10 +680,11 @@ for (FileI = 0; FileI < InputFileList.length; FileI++){
   saveAs("Tif", OutputImageThresholdedPath+InputFileNameINoExt);
   close();
 
-
   // Update the progress bar
   showProgress(FileI, InputFileList.length);
 }/////////////////////End of for FileI loop
-
+TimeEnd=getTime();
+Duration=TimeEnd-TimeStart;
+print("Total of "+ TotalNbSlice+" frames processed in "+Duration/1000);
 
 CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName);
