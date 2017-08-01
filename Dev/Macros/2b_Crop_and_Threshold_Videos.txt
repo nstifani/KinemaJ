@@ -339,52 +339,51 @@ do{
 
 
 
-///////////////////////////// Look for CSV File
+///////////////////////////// Look for TXT File
 ParentDirList=getFileList(ParentDir);
-NbPotentialCSV=0;
-for(n=0;n<ParentDirList.length;n++){
-  ItemName=ParentDirList[n];
-  if(matches(ItemName, InputDirName+"_ROI and Threshold Values/?_?[0-9]*/?")){
-    NbPotentialCSV++;
-    ItemNumber=n;
+NbPotentialTXT=0;
+for(N=0;N<ParentDirList.length;N++){
+  ItemN=ParentDirList[N];
+  if(matches(ItemN, InputDirName+"_ROI and Threshold Values/?_?[0-9]*/?")){
+    NbPotentialTXT++;
+    ItemNumber=N;
   }
 }
 
-////////// If only one ROI and Threshold Value folder is present pick the CSV file in it
-if(NbPotentialCSV==1){
-  CSVFilePath=ParentDir+ParentDirList[ItemNumber]+"ROI and Threshold Values.CSV";
-} else if(NbPotentialCSV!=1){
-  CSVFilePath=File.openDialog("Select the CSV File containing ROI Coordinates and Threshold Values");
+////////// If only one ROI and Threshold Value folder is present pick the TXT file in it
+if(NbPotentialTXT==1){
+  TXTFilePath=ParentDir+ParentDirList[ItemNumber]+"ROI and Threshold Values.txt";
+} else if(NbPotentialTXT!=1){
+  TXTFilePath=File.openDialog("Select the TXT File containing ROI Coordinates and Threshold Values");
 }
 
 
-// Criteria to check CSV file
+// Criteria to check TXT file
 RequiredHeaderPass=0;
 RequiredFilePass=0;
-RequiredHeaderList=newArray("Filename", "ROIPosX", "ROIPosY", "ROIWidth","ROIHeight", "LowerValue","UpperValue");
+RequiredHeaderList=newArray("Filename", "ROIPosX", "ROIPosY", "ROIWidth","ROIHeight", "ThresholdLowerValue","ThresholdUpperValue");
 RequiredFileList=InputFileList;
 
-// Check CSV file integrity
-while((endsWith(toLowerCase(CSVFilePath), ".csv")!=1) || (RequiredHeaderPass!=RequiredHeaderList.length) || (RequiredFilePass!=RequiredFileList.length)){
-  // if it is not a CSV
-  if(endsWith(toLowerCase(CSVFilePath), ".csv")!=1){
-    Dialog.create(PluginName+" Information");
-    Dialog.setInsets(0, 0, 0);
-    Dialog.addMessage("Sorry but \""+File.getName(CSVFilePath)+"\" is not a CSV File.");
-    TryAgainCancelCloseArray=newArray("Try again", "Cancel and Close");
-    Dialog.setInsets(5, 150, 0);
-    Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
-    Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-    // Display the Dialog and get user choice
-    Dialog.show();
-    UserChoice = Dialog.getRadioButton();
-    if (UserChoice=="Cancel and Close"){
-      exit(PluginName+" "+MacroName+" stopped because \"" +File.getName(CSVFilePath)+"\" is not a CSV File.");
+// Check TXT file integrity
+while((endsWith(toLowerCase(TXTFilePath), ".txt")!=1) || (RequiredHeaderPass!=RequiredHeaderList.length) || (RequiredFilePass!=RequiredFileList.length)){
+  // if it is not a TXT
+  if(endsWith(toLowerCase(TXTFilePath), ".txt")!=1){
+
+    MessageError="Sorry but the file:\n\"" +File.getName(TXTFilePath)+"\"\nis not a TXT file.";
+    MessageFix="The function \""+MacroName+"\" requires a TXT file providing the ROI coordinates and threshold values.";
+    ErrorResponseArray=newArray("Select Another TXT File", "Cancel and Close");
+    MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+File.getName(TXTFilePath)+"\"\nwas not a TXT file.";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+      CleanExit(MessageQuit);
+    } else { // Else user want to select another file
+      RequiredFilePass=0;
     }
-  } else if(endsWith(toLowerCase(CSVFilePath), ".csv")==1){ // if it ends by CSV then
+
+  } else if(endsWith(toLowerCase(TXTFilePath), ".txt")==1){ // if it ends by TXT then
     // Evaluate the header
-    open(CSVFilePath);
-    CSVFileHeadingArray=split(String.getResultsHeadings);
+    open(TXTFilePath);
+    TXTFileHeadingArray=split(String.getResultsHeadings);
     if(isOpen("Results")){
       run("Clear Results");
       selectWindow("Results");
@@ -491,7 +490,7 @@ while((endsWith(toLowerCase(CSVFilePath), ".csv")!=1) || (RequiredHeaderPass!=Re
 ////////// End of If ROI and Threshold Value folder is ambiguous
 
 
-
+*/
 ////////////////////////////// Read the CSV File
 open(CSVFilePath);
 CellSeparator= "\t";

@@ -510,7 +510,7 @@ NbSliceArray = newArray(0);
     if(nSlices>1){
       selectWindow(InputFileNameI);
       run("Animation Options...", "speed=100");
-      doCommand("Start Animation");
+      doCommand("Start Animation"); // run annimation on separate thread
       wait(500);
       run("Stop Animation");
     }
@@ -634,15 +634,14 @@ ThresholdUpperValueArray=Append(ThresholdUpperValueArray,ThresholdUpperValue);
 /////////////// Part 2 Crop and Threhsold Videos
 
 // Message this process can be long
-
 Array.getStatistics(NbSliceArray, MinNbSlice, MaxNbSlice, MeanNbSlice, StdDevNbSlice);
 TotalNbSlice=round(MeanNbSlice * NbSliceArray.length);
 ExpectedProcessingDuration=TotalNbSlice/2000; // Should be able to treat 2000 frames per minute
 call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+
 waitForUser(PluginName+" Information", "The function \""+MacroName+"\" will now process your file(s).\n"
 +"A total of "+TotalNbSlice+" frames will be processed which should take about "+ExpectedProcessingDuration+" minutes.\nPlease be patient."
 +"\nTo start the process, press OK.");
-TimeStart=getTime();
 setBatchMode(true);
 //////////////////////////// Process each File
 for (FileI = 0; FileI < InputFileList.length; FileI++){
@@ -683,8 +682,5 @@ for (FileI = 0; FileI < InputFileList.length; FileI++){
   // Update the progress bar
   showProgress(FileI, InputFileList.length);
 }/////////////////////End of for FileI loop
-TimeEnd=getTime();
-Duration=TimeEnd-TimeStart;
-print("Total of "+ TotalNbSlice+" frames processed in "+Duration/1000);
 
 CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName);
