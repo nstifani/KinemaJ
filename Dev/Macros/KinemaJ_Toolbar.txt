@@ -10,8 +10,6 @@ selectWindow("KinemaJ Toolbar");
 setLocation(IJPosX+IJSizeX+Spacer,IJPosY);
 </startupAction>
 
-
-
 <line>
 <button>1 line 1
 label=1 Calibrate Videos
@@ -30,7 +28,6 @@ run("Pre-process Videos");
 </macro>
 </line>
 
-
 <line>
 <button>1 line 3
 label=3 Track Markers
@@ -39,7 +36,6 @@ arg=<macro>
 run("Track Markers");
 </macro>
 </line>
-
 
 <line>
 <button>1 line 4

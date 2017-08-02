@@ -10,7 +10,7 @@ var FolderSuffix="Calibrated";
 var SubDirArray=newArray("Calibrated Images");
 CellSeparator= "\t";
 LineSeparator="\n";
- 
+
 /////////////// Header, Set Preferences, Options and Housekeeping
 // Select All measurements, Invert Y, and use 9 decimals
 run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display invert redirect=None decimal=9");
@@ -202,7 +202,7 @@ function SelectInputDir(MinNbFile, FileExt){
         } else if (UserResponseErrorDialog=="Select Another Folder") {
           FileI=InputCorrectExtFileList.length;
           SelectInputDirPass=0;
-        //  ErrorDialogPass=1;
+          //  ErrorDialogPass=1;
         }
       }else { // If basename is good add it to the InputFileList
         InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
@@ -257,7 +257,6 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 
 ////// Close Function
 function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
-  beep();
 
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){
@@ -265,6 +264,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
     selectWindow(ImageN);    run("Close");
   }
 
+  beep();
 
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
@@ -281,7 +281,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
 
 ////// CleanExit Function
 function CleanExit(MessageQuit){
-  beep();
+
   if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
   if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
   if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
@@ -293,7 +293,8 @@ function CleanExit(MessageQuit){
     selectWindow(ImageN);    run("Close");
 
   }
-Dialog.create(PluginName+" Information");
+  beep();
+  Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(MessageQuit);
   Dialog.setInsets(0, 0, 0);
@@ -306,14 +307,14 @@ Dialog.create(PluginName+" Information");
 
 //////////Close UtilityWindows
 function CloseUtilityWindows(ListUtilityWindows){
-// Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
     UtilityWindowI=ListUtilityWindows[WindowI];
     if(isOpen(UtilityWindowI)){
       if(UtilityWindowI=="Results"){        run("Clear Results");       }
       if(UtilityWindowI=="ROI Manager"){       roiManager("reset");      }
-        selectWindow(UtilityWindowI); run("Close");
-      }
+      selectWindow(UtilityWindowI); run("Close");
+    }
   }
 }
 //////////End of Close UtilityWindows
@@ -472,7 +473,7 @@ while(CalibrationValuePass!=1){
   RealWidthCm=Dialog.getNumber();
   RealHeightCm=Dialog.getNumber();
 
-// Make sure the Calibration Values are valid
+  // Make sure the Calibration Values are valid
   if(isNaN(RealWidthCm)==1 || isNaN(RealHeightCm)==1 || RealWidthCm<= 0 || RealHeightCm<= 0){
     MessageError="Sorry but Calibration Width and Height are not non-null positive numbers.";
     MessageFix="The function \""+MacroName+"\" requires positive non-null numbers for Calibration Width and Height.";
@@ -480,17 +481,17 @@ while(CalibrationValuePass!=1){
     MessageQuit="The function \""+ MacroName+"\" stopped because Calibration Width and Height were not positive non-null numbers.";
     UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
     if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-    CleanExit(MessageQuit);
-  } else if (UserResponseErrorDialog=="Try Again"){
-    RealWidthCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealWidthCm", 7);
-    RealHeightCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealHeightCm", 4);
-    CalibrationValuePass=0;
+      CleanExit(MessageQuit);
+    } else if (UserResponseErrorDialog=="Try Again"){
+      RealWidthCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealWidthCm", 7);
+      RealHeightCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealHeightCm", 4);
+      CalibrationValuePass=0;
     }
-}else{
-  call("ij.Prefs.set", PluginName+"."+MacroName+".RealWidthCm",RealWidthCm);
-  call("ij.Prefs.set", PluginName+"."+MacroName+".RealHeightCm",RealHeightCm);
-  CalibrationValuePass=1;
-}
+  }else{
+    call("ij.Prefs.set", PluginName+"."+MacroName+".RealWidthCm",RealWidthCm);
+    call("ij.Prefs.set", PluginName+"."+MacroName+".RealHeightCm",RealHeightCm);
+    CalibrationValuePass=1;
+  }
 }
 
 // Select the InputDirectory
@@ -506,11 +507,11 @@ CreateOutputSubDir(SubDirArray);
 OutputImagePath=""+OutputDirPath+"Calibrated Images"+File.separator;
 
 //////////////////////////// Create an Result TXT File
-  TXTFileName="Calibration Values";
-  TXTFilePath=OutputDirPath+TXTFileName+".txt";
-  TXTFile = File.open(TXTFilePath);
-  print(TXTFile, "Filename"+CellSeparator+"Width (pixel)"+CellSeparator+"Height (pixel)"+CellSeparator+"Width (cm)"+CellSeparator+"Height (cm)"+LineSeparator);
-  File.close(TXTFile);
+TXTFileName="Calibration Values";
+TXTFilePath=OutputDirPath+TXTFileName+".txt";
+TXTFile = File.open(TXTFilePath);
+print(TXTFile, "Filename"+CellSeparator+"Width (pixel)"+CellSeparator+"Height (pixel)"+CellSeparator+"Width (cm)"+CellSeparator+"Height (cm)"+LineSeparator);
+File.close(TXTFile);
 
 //////////////////////////// Process each File
 for (FileI = 0; FileI < InputFileList.length; FileI++){
@@ -541,9 +542,9 @@ for (FileI = 0; FileI < InputFileList.length; FileI++){
   close();
 
   if (nResults==4){ // If 4 markers are found get the results
-MarkerX=newArray(0);
-MarkerY=newArray(0);
-for (ResultI=0; ResultI<nResults; ResultI++){
+    MarkerX=newArray(0);
+    MarkerY=newArray(0);
+    for (ResultI=0; ResultI<nResults; ResultI++){
       X=getResult("X",ResultI);
       Y=getResult("Y",ResultI); // Y coordinates are inverted
       MarkerX=Append(MarkerX,X);
@@ -563,8 +564,8 @@ for (ResultI=0; ResultI<nResults; ResultI++){
   } else if (nResults!=4){ /////// if 4 markers haven't been detected ask user to do it manually
 
   do {
-        SelectionPrompt("rectangle","Make a rectangular selection on the calibration markers.");
-      } while(SelectionPromptPass!=1)
+    SelectionPrompt("rectangle","Make a rectangular selection on the calibration markers.");
+  } while(SelectionPromptPass!=1)
 
   // Once a rectangular selection is done
   setBatchMode("hide");

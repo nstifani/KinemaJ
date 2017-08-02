@@ -257,15 +257,12 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 
 ////// Close Function
 function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
-  beep();
-
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
   }
-
-
+  beep();
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
@@ -281,7 +278,6 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
 
 ////// CleanExit Function
 function CleanExit(MessageQuit){
-  beep();
   if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
   if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
   if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
@@ -291,8 +287,8 @@ function CleanExit(MessageQuit){
   for(n=0; n<ListImages.length; n++){
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
-
   }
+  beep();
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(MessageQuit);
@@ -527,8 +523,8 @@ do{
 
 RequiredHeaderList=newArray("Filename", "ROIPosX", "ROIPosY", "ROIWidth","ROIHeight", "ThresholdLowerValue","ThresholdUpperValue");
 do{
-SelectFile("ROI and Threshold Values","ROI and Threshold Values", "TXT", RequiredHeaderList );
-//Arguments for the function SelectFile(FolderSuffix, FileName, FileExt, FileHeaderList){
+  SelectFile("ROI and Threshold Values","ROI and Threshold Values", "TXT", RequiredHeaderList );
+  //Arguments for the function SelectFile(FolderSuffix, FileName, FileExt, FileHeaderList){
 }while(SelectFilePass!=1)
 
 // Create Unique Output directory

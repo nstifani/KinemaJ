@@ -1,21 +1,342 @@
 // Function written by Nicolas Stifani nstifani@gmail.com for more info
-requires("1.50f");
-PluginName="KinemaJ";
 
-IJPosX=screenWidth*0.1;
-IJPosY=screenHeight*0;
-IJSizeX=575;
-IJSizeY=100;
-Spacer=20;
-DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");");
+// Defines Global Variables
+requires("1.51n");
+var PluginName="KinemaJ";
+var MacroName="Calibrate Videos";
+var FileExt="AVI";
+var MinNbFile=1;
+var FolderSuffix="Calibrated";
+var SubDirArray=newArray("Calibrated Images");
+CellSeparator= "\t";
+LineSeparator="\n";
+
+/////////////// Header, Set Preferences, Options and Housekeeping
+// Select All measurements, Invert Y, and use 9 decimals
+run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display invert redirect=None decimal=9");
+run("Line Width...", "line=1"); // Set Line width as 1
+run("Input/Output...", "jpeg=100 gif=-1 file=.txt use copy_row save_column"); // Set Output as Txt and save columns and ignore row numbers
+run("Point Tool...", "type=Hybrid color=yellow size=Large label show counter=0");// Set the Point tool as yellow Medium Circle
+run("Colors...", "foreground=white background=black selection=yellow"); // Set foreground and background colors Selection is yellow
+run("Appearance...", "  menu=0 16-bit=Automatic"); // Change appareance of 16bit image as automatic
+run("Misc...", "divide=Infinity"); // Make sure Miscellaneous Options are set correctly
+run("Overlay Options...", "stroke=cyan width=2 point=Hybrid size=Large fill=none apply show");
+run("Labels...", "color=White font=10 show bold");
+call("ij.Prefs.set", "threshold.mode", 0); // Make the ImageJ preferences for threshold visualisation as Red over background
+
+// Set IJ Size and position
+IJPosX=screenWidth*0.1; // The position of ImageJ in X // Set IJ Size and position
+IJPosY=screenHeight*0; // The position of ImageJ in Y at the top of the screen
+IJSizeX=570; // The width of ImageJ toolbar in pixel
+IJSizeY=100; // The Height of ImageJ toolbar in pixel
+Spacer=25; // A spacer
+DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");"); // Adjust the position of the ImageJ toolbar
+
+// Set Toolbar Size and position
+ToolbarSizeX=250;// Set Toolbar Size and position
+ToolbarSizeY=200; // Size of the toolbar
+ToolbarPosX=IJPosX+IJSizeX+Spacer; // Position of the Toolbar is to the right of the ImageJ toolbar
+ToolbarPosY=IJPosY; // Position of to the Toolbar in Y
+
+// Position the Toolbar
+if(isOpen(PluginName+" Toolbar")){
+  selectWindow(PluginName+" Toolbar");
+  setLocation(ToolbarPosX,ToolbarPosY);
+}
+
+// Set Threshold Window Size and Position
+ThresholdSizeX=290;
+ThresholdSizeY=260;
+ThresholdPosX=ToolbarPosX; // The Position in X of the threshold window is below the toolbar
+ThresholdPosY=ToolbarPosY+ToolbarSizeY+Spacer; // Threshold toolbar is just below the plugin toolbar
+call("ij.Prefs.set", "threshold.loc", ThresholdPosX+" , "+ThresholdPosY);
+
+// Set ROI Manager Size and Position
+ROIManagerSizeX=250;
+ROIManagerSizeY=300;
+ROIManagerPosX=ToolbarPosX; // The Position in X of the ROI manager window which is to the right of the Treshold widnow
+ROIManagerPosY=ToolbarPosY+ToolbarSizeY+Spacer+ThresholdSizeY+Spacer;
+call("ij.Prefs.set", "manager.loc", ROIManagerPosX+" , "+ROIManagerPosY);
+
+// Set Results Size and Position to the right of the toolbar until the bottom of Threhsold window
+ResultsSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
+ResultsSizeY=ROIManagerPosY-Spacer;
+ResultsPosX=ToolbarPosX+ToolbarSizeX+Spacer;
+ResultsPosY=ToolbarPosY;
+call("ij.Prefs.set", "results.loc", ResultsPosX+" , "+ResultsPosY);
+call("ij.Prefs.set", "results.width", ResultsSizeX);
+call("ij.Prefs.set", "results.height", ResultsSizeY);
+
+
+// Set Log location
+LogSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
+LogSizeY=ROIManagerPosY-Spacer;
+LogPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+LogPosY=ToolbarPosY;
+call("ij.Prefs.set", "log.loc", LogPosX+" , "+LogPosY);
+
+// Set Debug location
+DebugSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
+DebugSizeY= ROIManagerPosY-Spacer;
+DebugPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+DebugPosY=ToolbarPosY;
+call("ij.Prefs.set", "debug.loc", DebugPosX+" , "+DebugPosY);
+// Set point Tool location
+PointToolSizeX=250;
+PointToolSizeY=300;
+PointToolPosX= ToolbarPosX+ROIManagerSizeX+Spacer; //PointTool is at the right of the ROI Manager
+PointToolPosY= ToolbarPosY+ToolbarSizeY+Spacer+ThresholdSizeY+Spacer;
+
+// Set Brightness and contrast location
+BCSizeX=150;
+BCSizeY=300;
+BCPosX=PointToolPosX+PointToolSizeX+Spacer; // Brigthness and contrsat is at the right of PointTool
+BCPosY=ROIManagerPosY;
+call("ij.Prefs.set", "b&c.loc", BCPosX+" , "+BCPosY);
+//////////////// Header and Housekeeping
+
+
+
+//////////////// General Functions
+// Function to Append to an array
+function Append(ArrayI, Value) {
+  ArrayJ = newArray(ArrayI.length+1);
+  for (ValueI=0; ValueI<ArrayI.length; ValueI++)
+  ArrayJ[ValueI] = ArrayI[ValueI];
+  ArrayJ[ArrayI.length] = Value;
+  return ArrayJ;
+}
+
+// Function to display a message
+var MessageDialogPass;
+function MessageDialog(Message){
+  MessageDialogPass=0;
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(Message);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+  MessageDialogPass=1;
+}
+
+// Function to display an error and propose to Fix it / Try again or to quit
+var ErrorDialogPass;
+var UserResponseErrorDialog;
+function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
+  ErrorDialogPass=0;
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageError);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageFix);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0, 20, 0);
+  Dialog.addRadioButtonGroup("", ErrorResponseArray, ErrorResponseArray.length, 1, ErrorResponseArray[0]);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+  UserResponseErrorDialog=Dialog.getRadioButton();
+  return UserResponseErrorDialog;
+}
+
+// Function to select an Input Directory containing at least MinNbFile with the correct File Extension FileExt
+var SelectInputDirPass; // Switch for the dialog box
+var InputDirPath; // Path of the input directory
+var ParentDir; // ParentDirectory of the selected input directory
+var InputDirName; // Name of the Input Directory
+var NbFileWithCorrectExt; // Nb of File with the correct extension in the input directory
+var InputItemList; // List of Files and folders in the input directory (all files no matter the extension)
+var InputCorrectExtFileList; // List of files with the correct extension
+var InputFileList;
+var NbFile;
+
+function SelectInputDir(MinNbFile, FileExt){
+  // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
+  // FileExt This is the File extension as a string example "tif"
+  InputDirPath=getDirectory("Select a FOLDER containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a Folder
+  InputItemList=getFileList(InputDirPath); // List of Item in the selected folder
+  ParentDir=File.getParent(InputDirPath)+File.separator;
+  InputDirName=File.getName(InputDirPath);
+
+  SelectInputDirPass=0; // Switch for the Function
+  NbFileWithCorrectExt=0; // Count of Nb of Files
+  BaseNameError=0; // Switch to make sure there is only one "." in the filename
+  InputCorrectExtFileList=newArray(0);
+  UserResponseErrorDialog="";
+
+  // Evaluate the Nb of File with correct extension and add them to InputCorrectExtFileList
+  for (ItemI=0; ItemI<InputItemList.length; ItemI++){
+    if(endsWith(toLowerCase(InputItemList[ItemI]), "."+toLowerCase(FileExt))){ // Select files with correct extension
+      InputCorrectExtFileList=Append(InputCorrectExtFileList, InputItemList[ItemI]);
+    }
+  }
+  NbFileWithCorrectExt=InputCorrectExtFileList.length;
+  if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
+    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
+    ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+      CleanExit(MessageQuit);
+    } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
+      SelectInputDirPass=0;
+    }
+  } else { // if NbFileWithCorrectExt is above or equal MinNbFile Evaluate Filenames
+    InputFileList=newArray(0);
+    for (FileI=0; FileI<InputCorrectExtFileList.length; FileI++){
+      BasenameFileIArray=split(InputCorrectExtFileList[FileI],"."); // Make an array from the filename
+      if(BasenameFileIArray.length!=2){// if there is more than one . in the file name abort
+        MessageError="Sorry but the "+FileExt+" file:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
+        MessageFix="The function \""+MacroName+"\" does NOT allow filenames with more than one unique \".\" used for the file extension.";
+        ErrorResponseArray=newArray("Select Another Folder", "Ignore This File", "Cancel and Close");
+        MessageQuit="The function \""+ MacroName+"\" stopped because the file\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
+        UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+        if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+          CleanExit(MessageQuit);
+        } else if (UserResponseErrorDialog=="Ignore This File"){
+
+        } else if (UserResponseErrorDialog=="Select Another Folder") {
+          FileI=InputCorrectExtFileList.length;
+          SelectInputDirPass=0;
+          //  ErrorDialogPass=1;
+        }
+      }else { // If basename is good add it to the InputFileList
+        InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
+      }
+    }
+    // Make sure InpuFileList is > MinNbFile
+    NbFile=InputFileList.length;
+    if(NbFile<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
+      MessageError="Sorry but the Folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" File with no more than one \".\" in its filename.";
+      MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" File with one unique \".\" used for the file extension.";
+      ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+      MessageQuit="The function \""+ MacroName+"\" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File no more than one \".\" in its filename.";
+      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+      if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+        CleanExit(MessageQuit);
+      } else {
+        SelectInputDirPass=0;
+      }
+    } else if (UserResponseErrorDialog=="Select Another Folder"){
+      SelectInputDirPass=0; // InputDir Pass the criteria
+    } else {
+      SelectInputDirPass=1; // InputDir Pass the criteria
+    }
+  }
+} // End of Function Select InputDir
+
+// Function to create a new output directory
+var OutputDirPath; // The path of the output directory
+var OutputDirName; // The name of the output directory
+function CreateOutputDir(ParentDir, InputDirName, FolderSuffix){ // Folder suffix is a string appended to the input Directory
+  OutputDirPath=ParentDir+InputDirName+"_"+FolderSuffix+File.separator; // Create the outputdirpath
+  n=1;
+  while(File.exists(OutputDirPath)!=0){ // If the path already exist, increment with _ n until it does not exist
+    n++;
+    OutputDirPath=ParentDir+InputDirName+"_"+FolderSuffix+"_"+n+File.separator;
+  } // End of making sure the outpudirectory is a new folder
+  File.makeDirectory(OutputDirPath); // Create the outpudirectory
+  OutputDirName=File.getName(OutputDirPath); // Get the Name of the output directory
+}
+
+////////// Function to create subfolders within the newly create outputdirectory
+function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the desired subfolders
+  for(i=0;i<SubDirArray.length;i++){
+    SubDirPath=OutputDirPath+SubDirArray[i]+File.separator; // Because outpudirpath is unique and new the subfolders do not exist yet so no need to check if they are already present
+    File.makeDirectory(SubDirPath);
+  } // End of for
+} // End of CreateOutputSubDir function
+// NOTE:It is useful to create a string for the subdirectory paths
+// For each element in the subdirarray addMessage
+// Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+File.separator;
+// Then you can use directly the string to save within a subdirectory
+
+////// Close Function
+function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
+  ListImages=getList("image.titles");
+  for(n=0; n<ListImages.length; n++){
+    ImageN=ListImages[n];
+    selectWindow(ImageN);    run("Close");
+  }
+  beep();
+  /////////////////////// Closing Dialog Box
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+}  ///////////////////////// End of Close Function
+
+////// CleanExit Function
+function CleanExit(MessageQuit){
+  if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
+  if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
+  if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
+  if(isOpen("B&C")){    selectWindow("B&C");    run("Close");  }//End of Close the Brightness window
+
+  ListImages=getList("image.titles");
+  for(n=0; n<ListImages.length; n++){
+    ImageN=ListImages[n];
+    selectWindow(ImageN);    run("Close");
+  }
+  beep();
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageQuit);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+  exit();
+}  ///////////////////////// End of CleanExit Function
+
+//////////Close UtilityWindows
+function CloseUtilityWindows(ListUtilityWindows){
+  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
+    UtilityWindowI=ListUtilityWindows[WindowI];
+    if(isOpen(UtilityWindowI)){
+      if(UtilityWindowI=="Results"){        run("Clear Results");       }
+      if(UtilityWindowI=="ROI Manager"){       roiManager("reset");      }
+      selectWindow(UtilityWindowI); run("Close");
+    }
+  }
+}
+//////////End of Close UtilityWindows
+////////////////////End of General Functions
+
+function StartUpMacro {
+
+
+} // end of function StartUpMacro
+
+
+
+
+
+
+
+
+
+
 
 // Look if is already loaded at startup
 MacroFolder=eval("script", "IJ.getDirectory(\"macros\");");
 StartUpMarcro="RunAtStartup.ijm";
 // If the RunAtStartup do not exists create an empty new one
 if (File.exists(MacroFolder+StartUpMarcro)==0){
-NewStartUpMacro=File.open(MacroFolder+StartUpMarcro);
-File.close(NewStartUpMacro);
+  NewStartUpMacro=File.open(MacroFolder+StartUpMarcro);
+  File.close(NewStartUpMacro);
 } // end of create an empty RunAtStartUp if it does not yet exist
 StartUpMacroContent=File.openAsString(MacroFolder+StartUpMarcro);
 StartUpMacroContentArray=split(StartUpMacroContent, "\n");
@@ -25,10 +346,10 @@ AutostartStatus="inactive";
 
 // Screen the Content of Startup and if matches change the status to active
 for (n=0; n<StartUpMacroContentArray.length; n++){
-if(matches(StartUpMacroContentArray[n], "run\\(\""+PluginName+" Toolbar\"\\)\\;")==1){
-AutostartStatus="active";
-RowAutostartStatus=n;
-}// end of if
+  if(matches(StartUpMacroContentArray[n], "run\\(\""+PluginName+" Toolbar\"\\)\\;")==1){
+    AutostartStatus="active";
+    RowAutostartStatus=n;
+  }// end of if
 } // end of for
 
 
@@ -43,7 +364,7 @@ Dialog.setInsets(0,0,0);
 if(AutostartStatus=="active"){
   AutostartOptionArray=newArray("Keep "+PluginName+" Autostart Active", "Remove "+PluginName+" Autostart");
   Dialog.addRadioButtonGroup("", AutostartOptionArray,2,1,"Keep "+PluginName+" Autostart Active");
-// if status is inactive propose two other choices
+  // if status is inactive propose two other choices
 } else if (AutostartStatus=="inactive"){
   AutostartOptionArray=newArray("Activate "+PluginName+" Autostart", "Keep "+PluginName+" Autostart OFF for now");
   Dialog.addRadioButtonGroup("", AutostartOptionArray,2,1,"Activate "+PluginName+" Autostart");
@@ -54,68 +375,68 @@ AutostartChoice = Dialog.getRadioButton();
 
 
 if (AutostartChoice=="Keep "+PluginName+" Autostart Active" || AutostartChoice=="Keep "+PluginName+" Autostart OFF for now"){
-// do nothing
-// if user wants to remove autostart
+  // do nothing
+  // if user wants to remove autostart
 } else if (AutostartChoice=="Remove "+PluginName+" Autostart"){
 
   //Create an empty string
   NewStartUpMacroContent="";
-// Reconstruct the StartUpMacro omitting the Rowwith from the array
-for (n=0; n<StartUpMacroContentArray.length; n++){
-if(n==RowAutostartStatus){
-//do nothing
-} else {
-  // reconstruct the autostart from the array
-  NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
-} // end of if
-} // end of for
-// Save the File startup with the new content
-File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
+  // Reconstruct the StartUpMacro omitting the Rowwith from the array
+  for (n=0; n<StartUpMacroContentArray.length; n++){
+    if(n==RowAutostartStatus){
+      //do nothing
+    } else {
+      // reconstruct the autostart from the array
+      NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
+    } // end of if
+  } // end of for
+  // Save the File startup with the new content
+  File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
 
 
 
-///////////////////// Initial Dialog Box
-Dialog.create(PluginName+" Information");
-Dialog.setInsets(10, 0, 00);
-Dialog.addMessage("To validate the modification ImageJ needs to restart.");
-Dialog.setInsets(10, 60, 00);
-Dialog.addMessage("Do you want to quit ImageJ now?");
-Dialog.setInsets(0, 120, 0);
-Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
-Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
-Dialog.show();
-RestartChoice=Dialog.getRadioButton();
-if(RestartChoice=="Quit"){run("Quit");}
+  ///////////////////// Initial Dialog Box
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(10, 0, 00);
+  Dialog.addMessage("To validate the modification ImageJ needs to restart.");
+  Dialog.setInsets(10, 60, 00);
+  Dialog.addMessage("Do you want to quit ImageJ now?");
+  Dialog.setInsets(0, 120, 0);
+  Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
+  Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
+  Dialog.show();
+  RestartChoice=Dialog.getRadioButton();
+  if(RestartChoice=="Quit"){run("Quit");}
 
-// if user wants to activate autostart
+  // if user wants to activate autostart
 } else if (AutostartChoice=="Activate "+PluginName+" Autostart"){
-//Create an empty string
-NewStartUpMacroContent="";
-// reconstruct the autostart from the array
-for (n=0; n<StartUpMacroContentArray.length; n++){
-NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
-}
-// add the  autostart at the end
-NewStartUpMacroContent=NewStartUpMacroContent+"run(\""+PluginName+" Toolbar\")\;"+"\n";
-// Save the File startup with the new content
-File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
-if (!isOpen(PluginName+" Toolbar")){
-run(PluginName+" Toolbar");
-selectWindow(PluginName+" Toolbar");
-setLocation(IJPosX+IJSizeX+Spacer,IJPosY);
-}
+  //Create an empty string
+  NewStartUpMacroContent="";
+  // reconstruct the autostart from the array
+  for (n=0; n<StartUpMacroContentArray.length; n++){
+    NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
+  }
+  // add the  autostart at the end
+  NewStartUpMacroContent=NewStartUpMacroContent+"run(\""+PluginName+" Toolbar\")\;"+"\n";
+  // Save the File startup with the new content
+  File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
+  if (!isOpen(PluginName+" Toolbar")){
+    run(PluginName+" Toolbar");
+    selectWindow(PluginName+" Toolbar");
+    setLocation(IJPosX+IJSizeX+Spacer,IJPosY);
+  }
 
 
-///////////////////// Closing Dialog Box
-Dialog.create(PluginName+" Information");
-Dialog.setInsets(10, 0, 00);
-Dialog.addMessage("To validate the modification ImageJ needs to restart.");
-Dialog.setInsets(10, 60, 00);
-Dialog.addMessage("Do you want to quit ImageJ now?");
+  ///////////////////// Closing Dialog Box
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(10, 0, 00);
+  Dialog.addMessage("To validate the modification ImageJ needs to restart.");
+  Dialog.setInsets(10, 60, 00);
+  Dialog.addMessage("Do you want to quit ImageJ now?");
 
-Dialog.setInsets(0, 120, 0);
-Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
-Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
-Dialog.show();
-RestartChoice=Dialog.getRadioButton();
-if(RestartChoice=="Quit"){run("Quit");}
+  Dialog.setInsets(0, 120, 0);
+  Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
+  Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
+  Dialog.show();
+  RestartChoice=Dialog.getRadioButton();
+  if(RestartChoice=="Quit"){run("Quit");}

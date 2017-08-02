@@ -173,7 +173,7 @@ function SelectInputDir(MinNbFile, FileExt){
     if(endsWith(toLowerCase(InputItemList[ItemI]), "."+toLowerCase(FileExt))){ // Select files with correct extension
       InputCorrectExtFileList=Append(InputCorrectExtFileList, InputItemList[ItemI]);
     }
-  } 
+  }
   NbFileWithCorrectExt=InputCorrectExtFileList.length;
   if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
     MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
@@ -203,7 +203,7 @@ function SelectInputDir(MinNbFile, FileExt){
         } else if (UserResponseErrorDialog=="Select Another Folder") {
           FileI=InputCorrectExtFileList.length;
           SelectInputDirPass=0;
-        //  ErrorDialogPass=1;
+          //  ErrorDialogPass=1;
         }
       }else { // If basename is good add it to the InputFileList
         InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
@@ -258,7 +258,7 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 
 ////// Close Function
 function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
-  beep();
+
 
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){
@@ -266,7 +266,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
     selectWindow(ImageN);    run("Close");
   }
 
-
+  beep();
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
@@ -282,7 +282,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
 
 ////// CleanExit Function
 function CleanExit(MessageQuit){
-  beep();
+
   if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
   if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
   if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
@@ -292,9 +292,9 @@ function CleanExit(MessageQuit){
   for(n=0; n<ListImages.length; n++){
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
-
   }
-Dialog.create(PluginName+" Information");
+  beep();
+  Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(MessageQuit);
   Dialog.setInsets(0, 0, 0);
@@ -307,14 +307,14 @@ Dialog.create(PluginName+" Information");
 
 //////////Close UtilityWindows
 function CloseUtilityWindows(ListUtilityWindows){
-// Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
     UtilityWindowI=ListUtilityWindows[WindowI];
     if(isOpen(UtilityWindowI)){
       if(UtilityWindowI=="Results"){        run("Clear Results");       }
       if(UtilityWindowI=="ROI Manager"){       roiManager("reset");      }
-        selectWindow(UtilityWindowI); run("Close");
-      }
+      selectWindow(UtilityWindowI); run("Close");
+    }
   }
 }
 //////////End of Close UtilityWindows
@@ -472,11 +472,11 @@ OutputImageThresholdedPath=""+OutputDirPath+"Thresholded"+File.separator;
 
 
 //////////////////////////// Create an Result TXT File
-  TXTFileName="ROI and Threshold Values";
-  TXTFilePath=OutputDirPath+TXTFileName+".txt";
-  TXTFile = File.open(TXTFilePath);
-  print(TXTFile, "Filename"+CellSeparator+"ROIPosX"+CellSeparator+"ROIPosY"+CellSeparator+"ROIWidth"+CellSeparator+"ROIHeight"+CellSeparator+"ThresholdLowerValue"+CellSeparator+"ThresholdUpperValue"+LineSeparator);
-  File.close(TXTFile);
+TXTFileName="ROI and Threshold Values";
+TXTFilePath=OutputDirPath+TXTFileName+".txt";
+TXTFile = File.open(TXTFilePath);
+print(TXTFile, "Filename"+CellSeparator+"ROIPosX"+CellSeparator+"ROIPosY"+CellSeparator+"ROIWidth"+CellSeparator+"ROIHeight"+CellSeparator+"ThresholdLowerValue"+CellSeparator+"ThresholdUpperValue"+LineSeparator);
+File.close(TXTFile);
 
 // Create Arrays to store the data
 FileNameArray = newArray(0);
@@ -488,46 +488,46 @@ ThresholdLowerValueArray = newArray(0);
 ThresholdUpperValueArray = newArray(0);
 NbSliceArray = newArray(0);
 
-  //////////////////////////// Part 1 Get Threshold Values and Crop Dimension for each file
-  for (FileI = 0; FileI < InputFileList.length; FileI++){
+//////////////////////////// Part 1 Get Threshold Values and Crop Dimension for each file
+for (FileI = 0; FileI < InputFileList.length; FileI++){
   //  setBatchMode(true);
-    InputFileNameI=InputFileList[FileI];
-    BasenameArray=split(InputFileNameI,".");
-    InputFileNameINoExt=BasenameArray[0];
-    InputFilePathI = InputDirPath+InputFileNameI;
-    //  open(InputFilePathI);
-    run("AVI...", "select=&InputFilePathI use convert"); // Open as AVI use virtual memory and convert to gray scale
-    // Remove the scale to have coordinates in pixels
-    run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");
+  InputFileNameI=InputFileList[FileI];
+  BasenameArray=split(InputFileNameI,".");
+  InputFileNameINoExt=BasenameArray[0];
+  InputFilePathI = InputDirPath+InputFileNameI;
+  //  open(InputFilePathI);
+  run("AVI...", "select=&InputFilePathI use convert"); // Open as AVI use virtual memory and convert to gray scale
+  // Remove the scale to have coordinates in pixels
+  run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");
 
-    //////////////////Get Threshold values
-    setBatchMode("show");
+  //////////////////Get Threshold values
+  setBatchMode("show");
+  selectWindow(InputFileNameI);
+  setLocation(IJPosX,IJPosY+IJSizeY+Spacer,IJSizeX, screenHeight*0.5);
+  setAutoThreshold("Minimum dark");
+  run("Threshold...");
+
+  if(nSlices>1){
     selectWindow(InputFileNameI);
-    setLocation(IJPosX,IJPosY+IJSizeY+Spacer,IJSizeX, screenHeight*0.5);
-    setAutoThreshold("Minimum dark");
-    run("Threshold...");
+    run("Animation Options...", "speed=100");
+    doCommand("Start Animation"); // run annimation on separate thread
+    wait(500);
+    run("Stop Animation");
+  }
 
-    if(nSlices>1){
-      selectWindow(InputFileNameI);
-      run("Animation Options...", "speed=100");
-      doCommand("Start Animation"); // run annimation on separate thread
-      wait(500);
-      run("Stop Animation");
-    }
-
-    call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ThresholdPosY+ThresholdSizeY+2*Spacer);
-    waitForUser(PluginName+" Information", "Adjust the Threshold to obtain RED Markers over the Background.\n"
-    +"\nWhen done, press OK.");
+  call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ThresholdPosY+ThresholdSizeY+2*Spacer);
+  waitForUser(PluginName+" Information", "Adjust the Threshold to obtain RED Markers over the Background.\n"
+  +"\nWhen done, press OK.");
 
   setBatchMode("hide");
   // Get the Threshold Values
   getThreshold(ThresholdLowerValue,ThresholdUpperValue);
 
-// Save the Nubmer of Slices
+  // Save the Nubmer of Slices
   NbSliceArray=Append(NbSliceArray, nSlices);
 
-////// Get the ROI
-// Reduce the Reduce the number of Frames (Slices) and project the MIP
+  ////// Get the ROI
+  // Reduce the Reduce the number of Frames (Slices) and project the MIP
 
   if(nSlices>1){
     if(nSlices<1000){
@@ -551,8 +551,8 @@ NbSliceArray = newArray(0);
   }
 
   // Duplicate the MaxIntensityProjection to be thresholded
-    selectWindow(InputFileNameI);
-    run("Duplicate...", "title=MIP");
+  selectWindow(InputFileNameI);
+  run("Duplicate...", "title=MIP");
 
   selectWindow("MIP");
   setThreshold(ThresholdLowerValue, ThresholdUpperValue, "BlackBackground");
@@ -573,27 +573,27 @@ NbSliceArray = newArray(0);
     CenterY=round(getHeight()/2);
   }
 
-// Calculate the Width and Height of the ROI
-if (CenterX==round(getWidth()/2)){
-  ROIWidth=round(0.8*getWidth());
-}else{
-  if(CenterX<round(getWidth()/2)){
-    ROIWidth=round(1.8*CenterX);
+  // Calculate the Width and Height of the ROI
+  if (CenterX==round(getWidth()/2)){
+    ROIWidth=round(0.8*getWidth());
   }else{
-    ROIWidth=round(1.8*(getWidth()-CenterX));
-  }
+    if(CenterX<round(getWidth()/2)){
+      ROIWidth=round(1.8*CenterX);
+    }else{
+      ROIWidth=round(1.8*(getWidth()-CenterX));
+    }
 
-}
-if (CenterY==round(getHeight()/2)){
-  ROIHeight=round(0.8*getHeight());
-}else{
-  if(CenterX<round(getHeight()/2)){
-    ROIHeight=round(1.8*CenterY);
-  }else{
-    ROIHeight=round(1.8*(getHeight()-CenterY));
   }
-}
-//Calculate the Position of ROI top right corner
+  if (CenterY==round(getHeight()/2)){
+    ROIHeight=round(0.8*getHeight());
+  }else{
+    if(CenterX<round(getHeight()/2)){
+      ROIHeight=round(1.8*CenterY);
+    }else{
+      ROIHeight=round(1.8*(getHeight()-CenterY));
+    }
+  }
+  //Calculate the Position of ROI top right corner
   ROIPosX=round(CenterX-ROIWidth/2);
   ROIPosY=round(CenterY-ROIHeight/2);
 
@@ -602,28 +602,28 @@ if (CenterY==round(getHeight()/2)){
   selectWindow(InputFileNameI);
   makeRectangle(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
   do {
-        SelectionPrompt("rectangle","Make a rectangular selection around the Region of Interest.");
-      } while(SelectionPromptPass!=1)
+    SelectionPrompt("rectangle","Make a rectangular selection around the Region of Interest.");
+  } while(SelectionPromptPass!=1)
 
-// Update the Selection
-getSelectionBounds(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
+  // Update the Selection
+  getSelectionBounds(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
 
-// Add selection to overlay and save the File
-selectWindow(InputFileNameI);
-close();
+  // Add selection to overlay and save the File
+  selectWindow(InputFileNameI);
+  close();
 
 
   // Write the values in the TXTfile
   File.append(InputFileNameINoExt+CellSeparator+ROIPosX+CellSeparator+ROIPosY+CellSeparator+ROIWidth+CellSeparator+ROIHeight+CellSeparator+ThresholdLowerValue+CellSeparator+ThresholdUpperValue,TXTFilePath);
 
-// Write the values to the arrays
-FileNameArray=Append(FileNameArray,InputFileNameINoExt);
-ROIPosXArray=Append(ROIPosXArray,ROIPosX);
-ROIPosYArray=Append(ROIPosYArray,ROIPosY);
-ROIWidthArray=Append(ROIWidthArray,ROIWidth);
-ROIHeightArray=Append(ROIHeightArray,ROIHeight);
-ThresholdLowerValueArray=Append(ThresholdLowerValueArray,ThresholdLowerValue);
-ThresholdUpperValueArray=Append(ThresholdUpperValueArray,ThresholdUpperValue);
+  // Write the values to the arrays
+  FileNameArray=Append(FileNameArray,InputFileNameINoExt);
+  ROIPosXArray=Append(ROIPosXArray,ROIPosX);
+  ROIPosYArray=Append(ROIPosYArray,ROIPosY);
+  ROIWidthArray=Append(ROIWidthArray,ROIWidth);
+  ROIHeightArray=Append(ROIHeightArray,ROIHeight);
+  ThresholdLowerValueArray=Append(ThresholdLowerValueArray,ThresholdLowerValue);
+  ThresholdUpperValueArray=Append(ThresholdUpperValueArray,ThresholdUpperValue);
 
   // Update the progress bar
   showProgress(FileI, InputFileList.length);
