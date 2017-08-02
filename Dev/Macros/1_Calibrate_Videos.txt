@@ -11,17 +11,19 @@ var SubDirArray=newArray("Calibrated Images");
 CellSeparator= "\t";
 LineSeparator="\n";
 
-/////////////// Header, Set Preferences, Options and Housekeeping
+
+
+//////////////////////////////////////////////// Header, Set Preferences, Options and Housekeeping
 // Select All measurements, Invert Y, and use 9 decimals
 run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display invert redirect=None decimal=9");
 run("Line Width...", "line=1"); // Set Line width as 1
 run("Input/Output...", "jpeg=100 gif=-1 file=.txt use copy_row save_column"); // Set Output as Txt and save columns and ignore row numbers
-run("Point Tool...", "type=Hybrid color=yellow size=Large label show counter=0");// Set the Point tool as yellow Medium Circle
+run("Point Tool...", "type=Hybrid color=yellow size=Large label show counter=0"); // Set the Point tool as yellow Medium Circle
 run("Colors...", "foreground=white background=black selection=yellow"); // Set foreground and background colors Selection is yellow
 run("Appearance...", "  menu=0 16-bit=Automatic"); // Change appareance of 16bit image as automatic
 run("Misc...", "divide=Infinity"); // Make sure Miscellaneous Options are set correctly
-run("Overlay Options...", "stroke=cyan width=2 point=Hybrid size=Large fill=none apply show");
-run("Labels...", "color=White font=10 show bold");
+run("Overlay Options...", "stroke=cyan width=2 point=Hybrid size=Large fill=none apply show"); // Overlay Options
+run("Labels...", "color=White font=10 show bold"); // Labels options
 call("ij.Prefs.set", "threshold.mode", 0); // Make the ImageJ preferences for threshold visualisation as Red over background
 
 // Set IJ Size and position
@@ -33,72 +35,70 @@ Spacer=25; // A spacer
 DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");"); // Adjust the position of the ImageJ toolbar
 
 // Set Toolbar Size and position
-ToolbarSizeX=250;// Set Toolbar Size and position
+ToolbarSizeX=250; // Set Toolbar Size and position
 ToolbarSizeY=200; // Size of the toolbar
 ToolbarPosX=IJPosX+IJSizeX+Spacer; // Position of the Toolbar is to the right of the ImageJ toolbar
 ToolbarPosY=IJPosY; // Position of to the Toolbar in Y
 
 // Position the Toolbar
-if(isOpen(PluginName+" Toolbar")){
-  selectWindow(PluginName+" Toolbar");
-  setLocation(ToolbarPosX,ToolbarPosY);
-}
+if(isOpen(PluginName+" Toolbar")){selectWindow(PluginName+" Toolbar"); setLocation(ToolbarPosX,ToolbarPosY);}
 
 // Set Threshold Window Size and Position
 ThresholdSizeX=290;
 ThresholdSizeY=260;
 ThresholdPosX=ToolbarPosX; // The Position in X of the threshold window is below the toolbar
 ThresholdPosY=ToolbarPosY+ToolbarSizeY+Spacer; // Threshold toolbar is just below the plugin toolbar
-call("ij.Prefs.set", "threshold.loc", ThresholdPosX+" , "+ThresholdPosY);
+call("ij.Prefs.set", "threshold.loc", ThresholdPosX+" , "+ThresholdPosY); // Save in the preferences
 
 // Set ROI Manager Size and Position
 ROIManagerSizeX=250;
 ROIManagerSizeY=300;
-ROIManagerPosX=ToolbarPosX; // The Position in X of the ROI manager window which is to the right of the Treshold widnow
+ROIManagerPosX=ToolbarPosX; // The Position in X of the ROI manager window
 ROIManagerPosY=ToolbarPosY+ToolbarSizeY+Spacer+ThresholdSizeY+Spacer;
-call("ij.Prefs.set", "manager.loc", ROIManagerPosX+" , "+ROIManagerPosY);
+call("ij.Prefs.set", "manager.loc", ROIManagerPosX+" , "+ROIManagerPosY); // Save in the preferences
 
-// Set Results Size and Position to the right of the toolbar until the bottom of Threhsold window
+// Set Results Size and Position
 ResultsSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
 ResultsSizeY=ROIManagerPosY-Spacer;
 ResultsPosX=ToolbarPosX+ToolbarSizeX+Spacer;
 ResultsPosY=ToolbarPosY;
-call("ij.Prefs.set", "results.loc", ResultsPosX+" , "+ResultsPosY);
-call("ij.Prefs.set", "results.width", ResultsSizeX);
-call("ij.Prefs.set", "results.height", ResultsSizeY);
-
+call("ij.Prefs.set", "results.loc", ResultsPosX+" , "+ResultsPosY);  // Save in the preferences
+call("ij.Prefs.set", "results.width", ResultsSizeX); // Save in the preferences
+call("ij.Prefs.set", "results.height", ResultsSizeY); // Save in the preferences
 
 // Set Log location
 LogSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
 LogSizeY=ROIManagerPosY-Spacer;
-LogPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+LogPosX=ToolbarPosX+ToolbarSizeX+Spacer;
 LogPosY=ToolbarPosY;
-call("ij.Prefs.set", "log.loc", LogPosX+" , "+LogPosY);
+call("ij.Prefs.set", "log.loc", LogPosX+" , "+LogPosY); // Save in the preferences
 
 // Set Debug location
 DebugSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
 DebugSizeY= ROIManagerPosY-Spacer;
-DebugPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+DebugPosX=ToolbarPosX+ToolbarSizeX+Spacer;
 DebugPosY=ToolbarPosY;
-call("ij.Prefs.set", "debug.loc", DebugPosX+" , "+DebugPosY);
+call("ij.Prefs.set", "debug.loc", DebugPosX+" , "+DebugPosY); // Save in the preferences
+
 // Set point Tool location
 PointToolSizeX=250;
 PointToolSizeY=300;
-PointToolPosX= ToolbarPosX+ROIManagerSizeX+Spacer; //PointTool is at the right of the ROI Manager
+PointToolPosX= ToolbarPosX+ROIManagerSizeX+Spacer;
 PointToolPosY= ToolbarPosY+ToolbarSizeY+Spacer+ThresholdSizeY+Spacer;
 
 // Set Brightness and contrast location
 BCSizeX=150;
 BCSizeY=300;
-BCPosX=PointToolPosX+PointToolSizeX+Spacer; // Brigthness and contrsat is at the right of PointTool
+BCPosX=PointToolPosX+PointToolSizeX+Spacer;
 BCPosY=ROIManagerPosY;
-call("ij.Prefs.set", "b&c.loc", BCPosX+" , "+BCPosY);
-//////////////// Header and Housekeeping
+call("ij.Prefs.set", "b&c.loc", BCPosX+" , "+BCPosY);  // Save in the preferences
+//////////////////////////////////////////////// Header and Housekeeping
 
 
 
-//////////////// General Functions
-// Function to Append to an array
+
+//////////////////////////////////////////////// General Functions
+/////////////////////////// Function to Append to an array
 function Append(ArrayI, Value) {
   ArrayJ = newArray(ArrayI.length+1);
   for (ValueI=0; ValueI<ArrayI.length; ValueI++)
@@ -106,8 +106,9 @@ function Append(ArrayI, Value) {
   ArrayJ[ArrayI.length] = Value;
   return ArrayJ;
 }
+/////////////////////////// Function to Append to an array
 
-// Function to display a message
+/////////////////////////// Function to display a message
 var MessageDialogPass;
 function MessageDialog(Message){
   MessageDialogPass=0;
@@ -120,8 +121,9 @@ function MessageDialog(Message){
   Dialog.show();
   MessageDialogPass=1;
 }
+/////////////////////////// Function to display a message
 
-// Function to display an error and propose to Fix it / Try again or to quit
+/////////////////////////// Function to display an error and propose to options
 var ErrorDialogPass;
 var UserResponseErrorDialog;
 function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
@@ -141,8 +143,11 @@ function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
   UserResponseErrorDialog=Dialog.getRadioButton();
   return UserResponseErrorDialog;
 }
+/////////////////////////// Function to display an error and propose to options
 
-// Function to select an Input Directory containing at least MinNbFile with the correct File Extension FileExt
+/////////////////////////// Function to select an Input Directory
+// containing at least MinNbFile with the correct File Extension FileExt
+// This function also prevents from having files with more than one . in their filenames
 var SelectInputDirPass; // Switch for the dialog box
 var InputDirPath; // Path of the input directory
 var ParentDir; // ParentDirectory of the selected input directory
@@ -189,7 +194,7 @@ function SelectInputDir(MinNbFile, FileExt){
     InputFileList=newArray(0);
     for (FileI=0; FileI<InputCorrectExtFileList.length; FileI++){
       BasenameFileIArray=split(InputCorrectExtFileList[FileI],"."); // Make an array from the filename
-      if(BasenameFileIArray.length!=2){// if there is more than one . in the file name abort
+      if(BasenameFileIArray.length!=2){ // if there is more than one . in the file name abort
         MessageError="Sorry but the "+FileExt+" file:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
         MessageFix="The function \""+MacroName+"\" does NOT allow filenames with more than one unique \".\" used for the file extension.";
         ErrorResponseArray=newArray("Select Another Folder", "Ignore This File", "Cancel and Close");
@@ -198,11 +203,10 @@ function SelectInputDir(MinNbFile, FileExt){
         if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
           CleanExit(MessageQuit);
         } else if (UserResponseErrorDialog=="Ignore This File"){
-
+          // Ignore
         } else if (UserResponseErrorDialog=="Select Another Folder") {
           FileI=InputCorrectExtFileList.length;
           SelectInputDirPass=0;
-          //  ErrorDialogPass=1;
         }
       }else { // If basename is good add it to the InputFileList
         InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
@@ -227,9 +231,10 @@ function SelectInputDir(MinNbFile, FileExt){
       SelectInputDirPass=1; // InputDir Pass the criteria
     }
   }
-} // End of Function Select InputDir
+}
+/////////////////////////// Function to select an Input Directory
 
-// Function to create a new output directory
+/////////////////////////// Function to create a new output directory
 var OutputDirPath; // The path of the output directory
 var OutputDirName; // The name of the output directory
 function CreateOutputDir(ParentDir, InputDirName, FolderSuffix){ // Folder suffix is a string appended to the input Directory
@@ -242,8 +247,9 @@ function CreateOutputDir(ParentDir, InputDirName, FolderSuffix){ // Folder suffi
   File.makeDirectory(OutputDirPath); // Create the outpudirectory
   OutputDirName=File.getName(OutputDirPath); // Get the Name of the output directory
 }
+/////////////////////////// Function to create a new output directory
 
-////////// Function to create subfolders within the newly create outputdirectory
+/////////////////////////// Function to create subfolders within the newly create outputdirectory
 function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the desired subfolders
   for(i=0;i<SubDirArray.length;i++){
     SubDirPath=OutputDirPath+SubDirArray[i]+File.separator; // Because outpudirpath is unique and new the subfolders do not exist yet so no need to check if they are already present
@@ -254,19 +260,16 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 // For each element in the subdirarray addMessage
 // Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+File.separator;
 // Then you can use directly the string to save within a subdirectory
+/////////////////////////// Function to create subfolders within the newly create outputdirectory
 
-////// Close Function
+/////////////////////////// Function Close and CleanUp Function
 function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
-
   ListImages=getList("image.titles");
-  for(n=0; n<ListImages.length; n++){
-    ImageN=ListImages[n];
-    selectWindow(ImageN);    run("Close");
-  }
+  for(n=0; n<ListImages.length; n++){ImageN=ListImages[n]; selectWindow(ImageN); run("Close");} // Close open Images
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   CloseUtilityWindows(ListUtilityWindows);
   beep();
-  /////////////////////// Closing Dialog Box
+  // Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
@@ -274,17 +277,14 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
   Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-
   Dialog.show();
-}  ///////////////////////// End of Close Function
+}
+/////////////////////////// Function Close and CleanUp Function
 
-////// CleanExit Function
+/////////////////////////// CleanExit Function
 function CleanExit(MessageQuit){
   ListImages=getList("image.titles");
-  for(n=0; n<ListImages.length; n++){
-    ImageN=ListImages[n];
-    selectWindow(ImageN);    run("Close");
-  }
+  for(n=0; n<ListImages.length; n++){ImageN=ListImages[n]; selectWindow(ImageN); run("Close");} // Close open Images
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   CloseUtilityWindows(ListUtilityWindows);
   beep();
@@ -295,304 +295,312 @@ function CleanExit(MessageQuit){
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   exit();
-}  ///////////////////////// End of CleanExit Function
+}
+/////////////////////////// CleanExit Function
 
-//////////Close UtilityWindows
+/////////////////////////// Close UtilityWindows
 function CloseUtilityWindows(ListUtilityWindows){
   // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
     UtilityWindowI=ListUtilityWindows[WindowI];
     if(isOpen(UtilityWindowI)){
-      if(UtilityWindowI=="Results"){        run("Clear Results");       }
-      if(UtilityWindowI=="ROI Manager"){       roiManager("reset");      }
-      selectWindow(UtilityWindowI); run("Close");
+      if(UtilityWindowI=="Results"){run("Clear Results");}
+      if(UtilityWindowI=="ROI Manager"){roiManager("reset");}
+      selectWindow(UtilityWindowI); run("Close"); }
     }
   }
-}
-//////////End of Close UtilityWindows
-////////////////////End of General Functions
+  /////////////////////////// Close UtilityWindows
+  //////////////////////////////////////////////// End of General Functions
 
 
-////////////////////Specific Functions
-// This function Prompt for a specific type of selection and ensure a selection is made before moving next
-var SelectionPromptPass; // This is the switch when the selection pass the criteria
-function SelectionPrompt(SelectionTypeName, SelectionInfo){
-  // Selection name is the name of the selection. It is a string that can take the following values:
-  // rectangle, oval, polygon, freehand, traced, straight line, segmented line, freehandline, angle, point, multipoint
-  // SelectionInfo is a string that explains what the Selection should be
-  //SelectionPromptPass=0;
-  // Define what the SelectionType value for each selection
-  if(SelectionTypeName=="rectangle"){
-    SelectionValue=0;
-  } else if(SelectionTypeName=="oval"){
-    SelectionValue=1;
-  } else if(SelectionTypeName=="polygon"){
-    SelectionValue=2;
-  } else if(SelectionTypeName=="freehand"){
-    SelectionValue=3;
-  } else if(SelectionTypeName=="traced"){
-    SelectionValue=4;
-  } else if(SelectionTypeName=="straight line"){
-    SelectionValue=5;
-  } else if(SelectionTypeName=="segmented line"){
-    SelectionValue=6;
-  } else if(SelectionTypeName=="freehand line"){
-    SelectionValue=7;
-  } else if(SelectionTypeName=="angle"){
-    SelectionValue=8;
-  } else if(SelectionTypeName=="point"){
-    SelectionValue=10;
-  } else if(SelectionTypeName=="multipoint"){
-    SelectionValue=10;
-  } else {
-    SelectionValue=-1; // No selection
-  }
 
-  CurrentImageName=getTitle(); // Get the Image of the Current Image
-  CurrentSelection=selectionType(); // Get the Current selection
+  //////////////////////////////////////////////// Specific Functions
+  /////////////////////////// Prompt for Selection
+  // This function Prompt for a specific type of selection and ensure a selection is made before moving next
+  var SelectionPromptPass; // This is the switch when the selection pass the criteria
+  function SelectionPrompt(SelectionTypeName, SelectionInfo){
+    // Selection name is the name of the selection. It is a string that can take the following values:
+    // rectangle, oval, polygon, freehand, traced, straight line, segmented line, freehandline, angle, point, multipoint
+    // SelectionInfo is a string that explains what the Selection should be
+    // SelectionPromptPass=0;
+    // Define what the SelectionType value for each selection
+    if(SelectionTypeName=="rectangle"){
+      SelectionValue=0;
+    } else if(SelectionTypeName=="oval"){
+      SelectionValue=1;
+    } else if(SelectionTypeName=="polygon"){
+      SelectionValue=2;
+    } else if(SelectionTypeName=="freehand"){
+      SelectionValue=3;
+    } else if(SelectionTypeName=="traced"){
+      SelectionValue=4;
+    } else if(SelectionTypeName=="straight line"){
+      SelectionValue=5;
+    } else if(SelectionTypeName=="segmented line"){
+      SelectionValue=6;
+    } else if(SelectionTypeName=="freehand line"){
+      SelectionValue=7;
+    } else if(SelectionTypeName=="angle"){
+      SelectionValue=8;
+    } else if(SelectionTypeName=="point"){
+      SelectionValue=10;
+    } else if(SelectionTypeName=="multipoint"){
+      SelectionValue=10;
+    } else {
+      SelectionValue=-1; // No selection
+    }
 
-  // If the currentselection does not match the expected selection but if there is something in the overlay
-  if(CurrentSelection!=SelectionValue && Overlay.size==1){
-    run("Show Overlay");
-    Overlay.activateSelection(0); // Get the selection from the overlay
-    run("Remove Overlay");
-    CurrentSelection=selectionType(); // refresh Current selection
-  }
+    CurrentImageName=getTitle(); // Get the Image of the Current Image
+    CurrentSelection=selectionType(); // Get the Current selection
 
-  if(CurrentSelection==SelectionValue){ // If a correct Selection is present ask what to do
-    setBatchMode("show");
-    selectWindow(CurrentImageName);
-    setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
-
-    MessageError="A "+SelectionTypeName+" selection was detected.";
-    MessageFix="What would you like to do?";
-    ErrorResponseArray=newArray("Keep the current "+SelectionTypeName+" selection", "Adjust the current "+SelectionTypeName+" selection", "Discard the current "+SelectionTypeName+" selection", "Cancel and Close");
-    MessageQuit="";
-    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-    if(UserResponseErrorDialog==ErrorResponseArray[0]){
-      SelectionPromptPass=1;
-    } else if(UserResponseErrorDialog==ErrorResponseArray[1]){
-      SelectionPromptPass=0; // Set the Switch to 0
-    } else if(UserResponseErrorDialog==ErrorResponseArray[2]) {
+    // If the currentselection does not match the expected selection but if there is something in the overlay
+    if(CurrentSelection!=SelectionValue && Overlay.size==1){
+      run("Show Overlay");
+      Overlay.activateSelection(0); // Get the selection from the overlay
       run("Remove Overlay");
-      run("Select None");
-      SelectionPromptPass=0; // Set the Switch to 0
-    }else if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]) {
-      CleanExit(MessageQuit);
+      CurrentSelection=selectionType(); // refresh Current selection
     }
 
-  } else { // Else the current selection does not match the expected selection
-    SelectionPromptPass=0;
-    run("Select None");
-
-  }
-
-  if(SelectionPromptPass==0){ // If the selection is not set prompt or does not correspond to the expected selection
-    setBatchMode("show");
-    selectWindow(CurrentImageName);
-    setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
-    run("Hide Overlay");
-    setTool(SelectionTypeName);
-    // if(SelectionTypeName=="multipoint"){
-    //   setTool("multipoint");
-    //   run("Point Tool...", "type=Hybrid color=White size=Large label show counter=0"); // Set the Point tool as yellow Medium Circle
-    //   doCommand("Point Tool..."); // Bring the non-modal Point Tool at front in a separate thread
-    // }
-    if(isOpen("Results")){        run("Clear Results");        selectWindow("Results");        run("Close");      }//end of if Results is open
-    call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-    waitForUser(PluginName+" Information", "Draw a "+SelectionTypeName+" selection.\n"
-    +SelectionInfo+
-    "\nWhen done, press OK.");
-    CurrentSelection=selectionType();
-    if(CurrentSelection<0 || CurrentSelection!=SelectionValue){
-      if(CurrentSelection<0){
-        MessageError="Sorry but no "+SelectionTypeName+" selection was detected.";
-        MessageFix="The function \""+MacroName+"\" requires a "+SelectionTypeName+" selection.";
-        ErrorResponseArray=newArray("Create a "+SelectionTypeName+" selection", "Cancel and Close");
-        MessageQuit="The function \""+ MacroName+"\" stopped because no "+SelectionTypeName+" was detected.";
-      } else if(CurrentSelection!=SelectionValue){
-        MessageError="Sorry but the selection is not a "+SelectionTypeName+".";
-        MessageFix="The function \""+MacroName+"\" requires a "+SelectionTypeName+" selection.";
-        ErrorResponseArray=newArray("Create a "+SelectionTypeName+" selection", "Cancel and Close");
-        MessageQuit="The function \""+ MacroName+"\" stopped because the provided selection was not a "+SelectionTypeName+".";
-      }
+    if(CurrentSelection==SelectionValue){ // If a correct Selection is present ask what to do
       setBatchMode("show");
+      selectWindow(CurrentImageName);
+      setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
 
-      // Close results windows if it is open
-      if(isOpen("Results")){        run("Clear Results");        selectWindow("Results");        run("Close");      }//end of if Results is open
+      MessageError="A "+SelectionTypeName+" selection was detected.";
+      MessageFix="What would you like to do?";
+      ErrorResponseArray=newArray("Keep the current "+SelectionTypeName+" selection", "Adjust the current "+SelectionTypeName+" selection", "Discard the current "+SelectionTypeName+" selection", "Cancel and Close");
+      MessageQuit="The function \""+ MacroName+"\" stopped because the "+SelectionTypeName+" selection was not validated by the user.";
       UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
       if(UserResponseErrorDialog==ErrorResponseArray[0]){
+        SelectionPromptPass=1;
+      } else if(UserResponseErrorDialog==ErrorResponseArray[1]){
+        SelectionPromptPass=0; // Set the Switch to 0
+      } else if(UserResponseErrorDialog==ErrorResponseArray[2]) {
+        run("Remove Overlay");
         run("Select None");
-        SelectionPromptPass=0;
-      } else if (UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+        SelectionPromptPass=0; // Set the Switch to 0
+      }else if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]) {
         CleanExit(MessageQuit);
       }
-    } else {
-      SelectionPromptPass=1;
-      setBatchMode("hide");
 
-    }// End of else Selection is good
-  } // End of If selection does not pass prompt for a selection
-} // End of Function Get selection
-///////////////////End of Specific Functions
-
-// Macro starts here
-// Intial Message
-InitialMessage="The function \""+MacroName+"\" will:"
-+"\n - Prompt to enter the real calibration width and height in centimeter"
-+"\n - Prompt to select a folder containing at least "+MinNbFile+" "+FileExt+" calibration file(s) to process"
-+"\n\nFor each "+FileExt+" file:"
-+"\n - Try to detect calibration markers automatically"
-+"\n - If automatic detection fails: Prompt to draw a rectangular selection on the calibration markers"
-+"\n - Save the first frame as a TIF file"
-+"\n - Save the calibration values in a TXT file";
-
-MessageDialog(InitialMessage); // Display the Initial Message
-
-// Get Calibration values from saved in preferences
-RealWidthCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealWidthCm", 7);
-RealHeightCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealHeightCm", 4);
-
-CalibrationValuePass=0; // Switch for getting valid Calibration values
-while(CalibrationValuePass!=1){
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0,0,0);
-  Dialog.addNumber("Real Calibration Width", RealWidthCm, 1, 5, "cm");
-  Dialog.setInsets(0,0,0);
-  Dialog.addNumber("Real Calibration Height", RealHeightCm, 1, 5, "cm");
-  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-  Dialog.show();
-  RealWidthCm=Dialog.getNumber();
-  RealHeightCm=Dialog.getNumber();
-
-  // Make sure the Calibration Values are valid
-  if(isNaN(RealWidthCm)==1 || isNaN(RealHeightCm)==1 || RealWidthCm<= 0 || RealHeightCm<= 0){
-    MessageError="Sorry but Calibration Width and Height are not non-null positive numbers.";
-    MessageFix="The function \""+MacroName+"\" requires positive non-null numbers for Calibration Width and Height.";
-    ErrorResponseArray=newArray("Try Again", "Cancel and Close");
-    MessageQuit="The function \""+ MacroName+"\" stopped because Calibration Width and Height were not positive non-null numbers.";
-    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-      CleanExit(MessageQuit);
-    } else if (UserResponseErrorDialog=="Try Again"){
-      RealWidthCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealWidthCm", 7);
-      RealHeightCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealHeightCm", 4);
-      CalibrationValuePass=0;
+    } else { // Else the current selection does not match the expected selection
+      SelectionPromptPass=0;
+      run("Select None");
     }
-  }else{
-    call("ij.Prefs.set", PluginName+"."+MacroName+".RealWidthCm",RealWidthCm);
-    call("ij.Prefs.set", PluginName+"."+MacroName+".RealHeightCm",RealHeightCm);
-    CalibrationValuePass=1;
+
+    if(SelectionPromptPass==0){ // If the selection is not set prompt or does not correspond to the expected selection
+      setBatchMode("show");
+      selectWindow(CurrentImageName);
+      setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
+      run("Hide Overlay");
+      setTool(SelectionTypeName);
+      // if(SelectionTypeName=="multipoint"){
+      //   setTool("multipoint");
+      //   run("Point Tool...", "type=Hybrid color=White size=Large label show counter=0"); // Set the Point tool as yellow Medium Circle
+      //   doCommand("Point Tool..."); // Bring the non-modal Point Tool at front in a separate thread
+      // }
+      if(isOpen("Results")){run("Clear Results"); selectWindow("Results"); run("Close");} //end of if Results is open
+      call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+      waitForUser(PluginName+" Information", "Draw a "+SelectionTypeName+" selection.\n"
+      +SelectionInfo+
+      "\nWhen done, press OK.");
+      CurrentSelection=selectionType();
+      if(CurrentSelection<0 || CurrentSelection!=SelectionValue){
+        if(CurrentSelection<0){
+          MessageError="Sorry but no "+SelectionTypeName+" selection was detected.";
+          MessageFix="The function \""+MacroName+"\" requires a "+SelectionTypeName+" selection.";
+          ErrorResponseArray=newArray("Create a "+SelectionTypeName+" selection", "Cancel and Close");
+          MessageQuit="The function \""+ MacroName+"\" stopped because no "+SelectionTypeName+" selection was detected.";
+        } else if(CurrentSelection!=SelectionValue){
+          MessageError="Sorry but the selection is not a "+SelectionTypeName+".";
+          MessageFix="The function \""+MacroName+"\" requires a "+SelectionTypeName+" selection.";
+          ErrorResponseArray=newArray("Create a "+SelectionTypeName+" selection", "Cancel and Close");
+          MessageQuit="The function \""+ MacroName+"\" stopped because the provided selection was not a "+SelectionTypeName+".";
+        }
+        setBatchMode("show");
+
+        // Close results windows if it is open
+        if(isOpen("Results")){run("Clear Results"); selectWindow("Results"); run("Close");} //end of if Results is open
+        UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+        if(UserResponseErrorDialog==ErrorResponseArray[0]){
+          run("Select None");
+          SelectionPromptPass=0;
+        } else if (UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+          CleanExit(MessageQuit);
+        }
+      } else {
+        SelectionPromptPass=1;
+        setBatchMode("hide");
+      } // End of else Selection is good
+    } // End of If selection does not pass prompt for a selection
   }
-}
+  /////////////////////////// Prompt for Selection
+  //////////////////////////////////////////////// Specific Functions
 
-// Select the InputDirectory
-do{
-  SelectInputDir(MinNbFile,FileExt);
-}while(SelectInputDirPass!=1)
 
-// Create Unique Output directory
-CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
 
-// Create OutputSubdirectories
-CreateOutputSubDir(SubDirArray);
-OutputImagePath=""+OutputDirPath+"Calibrated Images"+File.separator;
+  //////////////////////////////////////////////// Macro starts here
+  // Intial Message
+  InitialMessage="The function \""+MacroName+"\" will:"
+  +"\n - Prompt to enter the real calibration width and height in centimeter"
+  +"\n - Prompt to select a folder containing at least "+MinNbFile+" "+FileExt+" calibration file(s) to process"
+  +"\n\nFor each "+FileExt+" file:"
+  +"\n - Try to detect calibration markers automatically"
+  +"\n - If automatic detection fails: Prompt to draw a rectangular selection on the calibration markers"
+  +"\n - Save the first frame as a TIF file"
+  +"\n - Save the calibration values in a TXT file";
 
-//////////////////////////// Create an Result TXT File
-TXTFileName="Calibration Values";
-TXTFilePath=OutputDirPath+TXTFileName+".txt";
-TXTFile = File.open(TXTFilePath);
-print(TXTFile, "Filename"+CellSeparator+"Width (pixel)"+CellSeparator+"Height (pixel)"+CellSeparator+"Width (cm)"+CellSeparator+"Height (cm)"+LineSeparator);
-File.close(TXTFile);
+  MessageDialog(InitialMessage); // Display the Initial Message
 
-//////////////////////////// Process each File
-for (FileI = 0; FileI < InputFileList.length; FileI++){
-  setBatchMode(true);
-  InputFileNameI=InputFileList[FileI];
-  BasenameArray=split(InputFileNameI,".");
-  InputFileNameINoExt=BasenameArray[0];
-  InputFilePathI = InputDirPath+InputFileNameI;
-  //  open(InputFilePathI);
-  run("AVI...", "select=&InputFilePathI last=1 use convert"); // Open as AVI use virtual memory and convert to gray scale
-  // Remove the scale to have coordinates in pixels
-  run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");
+  // Get Calibration values from saved in preferences
+  RealWidthCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealWidthCm", 7);
+  RealHeightCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealHeightCm", 4);
 
-  /////////////// Try to detect the 4 markers
-  selectWindow(InputFileNameI);
-  run("Duplicate...", "title=AutoDetect");
-  selectWindow("AutoDetect");
-  run("Auto Threshold...", "method=Shanbhag white"); // Threshold
-  run("Convert to Mask");
-  run("Open"); // Remove noise
+  CalibrationValuePass=0; // Switch for getting valid Calibration values
+  while(CalibrationValuePass!=1){
+    Dialog.create(PluginName+" Information");
+    Dialog.addNumber("Real Calibration Width", RealWidthCm, 1, 5, "cm");
+    Dialog.addNumber("Real Calibration Height", RealHeightCm, 1, 5, "cm");
+    Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+    Dialog.show();
+    RealWidthCm=Dialog.getNumber();
+    RealHeightCm=Dialog.getNumber();
 
-  // Set the required mesurements parameters
-  run("Set Measurements...", "centroid redirect=None decimal=9");
-  // Detect circular markers
-  selectWindow("AutoDetect");
-  run("Analyze Particles...", "size=80-500 circularity=0.90-1.00 display clear");
-  selectWindow("AutoDetect");
-  close();
+    // Make sure the Calibration Values are valid
+    if(isNaN(RealWidthCm)==1 || isNaN(RealHeightCm)==1 || RealWidthCm<= 0 || RealHeightCm<= 0){
+      MessageError="Sorry but Calibration Width and Height are not non-null positive numbers.";
+      MessageFix="The function \""+MacroName+"\" requires positive non-null numbers for Calibration Width and Height.";
+      ErrorResponseArray=newArray("Try Again", "Cancel and Close");
+      MessageQuit="The function \""+ MacroName+"\" stopped because Calibration Width and Height were not positive non-null numbers.";
+      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+      if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+        CleanExit(MessageQuit);
+      } else if (UserResponseErrorDialog=="Try Again"){
+        RealWidthCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealWidthCm", 7);
+        RealHeightCm=call("ij.Prefs.get", PluginName+"."+MacroName+".RealHeightCm", 4);
+        CalibrationValuePass=0;
+      }
+    }else{
+      call("ij.Prefs.set", PluginName+"."+MacroName+".RealWidthCm",RealWidthCm);
+      call("ij.Prefs.set", PluginName+"."+MacroName+".RealHeightCm",RealHeightCm);
+      CalibrationValuePass=1;
+    }
+  }
 
-  if (nResults==4){ // If 4 markers are found get the results
-    MarkerX=newArray(0);
-    MarkerY=newArray(0);
-    for (ResultI=0; ResultI<nResults; ResultI++){
-      X=getResult("X",ResultI);
-      Y=getResult("Y",ResultI); // Y coordinates are inverted
-      MarkerX=Append(MarkerX,X);
-      MarkerY=Append(MarkerY,Y);
+  // Select the InputDirectory
+  do{
+    SelectInputDir(MinNbFile,FileExt);
+  }while(SelectInputDirPass!=1)
+
+  // Create Unique Output directory
+  CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
+
+  // Create OutputSubdirectories
+  CreateOutputSubDir(SubDirArray);
+  OutputImagePath=""+OutputDirPath+"Calibrated Images"+File.separator;
+
+  // Create an Result TXT File
+  TXTFileName="Calibration Values";
+  TXTFilePath=OutputDirPath+TXTFileName+".txt";
+  TXTFile = File.open(TXTFilePath);
+  print(TXTFile, "Filename"+CellSeparator+"Width (pixel)"+CellSeparator+"Height (pixel)"+CellSeparator+"Width (cm)"+CellSeparator+"Height (cm)"+LineSeparator);
+  File.close(TXTFile);
+
+
+
+
+  //////////////////////////////////////////////// Process each File
+  for (FileI = 0; FileI < InputFileList.length; FileI++){
+    setBatchMode(true);
+    InputFileNameI=InputFileList[FileI];
+    BasenameArray=split(InputFileNameI,".");
+    InputFileNameINoExt=BasenameArray[0];
+    InputFilePathI = InputDirPath+InputFileNameI;
+    //  open(InputFilePathI);
+    run("AVI...", "select=&InputFilePathI last=1 use convert"); // Open as AVI use virtual memory and convert to gray scale
+    // Remove the scale to have coordinates in pixels
+    run("Set Scale...", "distance=0 known=0 pixel=1 unit=pixel");
+
+    // Try to detect the 4 markers
+    selectWindow(InputFileNameI);
+    run("Duplicate...", "title=AutoDetect");
+    selectWindow("AutoDetect");
+    run("Auto Threshold...", "method=Shanbhag white"); // Threshold
+    run("Convert to Mask");
+    run("Open"); // Remove noise
+
+    // Set the required mesurements parameters
+    // Leave Y coordinates inverted
+    run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display redirect=None decimal=9");
+    // Detect circular markers
+    selectWindow("AutoDetect");
+    run("Analyze Particles...", "size=80-500 circularity=0.90-1.00 clear");
+    selectWindow("AutoDetect");
+    close();
+
+    if (nResults==4){ // If 4 markers are found get the results
+      MarkerX=newArray(0);
+      MarkerY=newArray(0);
+      for (ResultI=0; ResultI<nResults; ResultI++){
+        X=getResult("X",ResultI);
+        Y=getResult("Y",ResultI); // Y coordinates are inverted
+        MarkerX=Append(MarkerX,X);
+        MarkerY=Append(MarkerY,Y);
+      }
+
+      // Get the Statistics of the arrays
+      Array.getStatistics(MarkerX, MinMarkerX, MaxMarkerX, MeanMarkerX, StdDevMarkerX);
+      Array.getStatistics(MarkerY, MinMarkerY, MaxMarkerY, MeanMarkerY, StdDevMarkerY);
+
+      // Get the coordinates of the coordinates of the Calibration Markers
+      PosX=round(MinMarkerX);
+      PosY=round(MinMarkerY);
+      Width=round(MaxMarkerX-MinMarkerX);
+      Height=round(MaxMarkerY-MinMarkerY);
+
+      // Draw the Rectangle in the overlay
+      selectWindow(InputFileNameI);
+      run("Select None");
+      makeRectangle(PosX, PosY, Width, Height);
     }
 
-    // Get the Statistics of the arrays
-    Array.getStatistics(MarkerX, MinMarkerX, MaxMarkerX, MeanMarkerX, StdDevMarkerX);
-    Array.getStatistics(MarkerY, MinMarkerY, MaxMarkerY, MeanMarkerY, StdDevMarkerY);
+    do {
+      SelectionPrompt("rectangle","Make a rectangular selection on the calibration markers.");
+    } while(SelectionPromptPass!=1)
 
-    // Get the coordinates of the coordinates of the Calibration Markers
-    PosX=round(MinMarkerX);
-    PosY=round(MinMarkerY);
-    Width=round(MaxMarkerX-MinMarkerX);
-    Height=round(MaxMarkerY-MinMarkerY);
+    // Once a rectangular selection is done
+    setBatchMode("hide");
 
-  } else if (nResults!=4){ /////// if 4 markers haven't been detected ask user to do it manually
+    // Measure the rectangular selection Dimension
+    // Leave Y coordinates inverted
+    run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display redirect=None decimal=9");
+    List.setMeasurements; 
+    PosX=List.getValue("BX");
+    PosY=List.getValue("BY");
+    Width=List.getValue("Width");
+    Height=List.getValue("Height");
 
-  do {
-    SelectionPrompt("rectangle","Make a rectangular selection on the calibration markers.");
-  } while(SelectionPromptPass!=1)
+    // Append the coordinates to the TXT File
+    File.append(InputFileNameINoExt+CellSeparator+Width+CellSeparator+Height+CellSeparator+RealWidthCm+CellSeparator+RealHeightCm,TXTFilePath);
 
-  // Once a rectangular selection is done
-  setBatchMode("hide");
-  run("Clear Results");
-  // Set the required mesurements parameters
-  run("Set Measurements...", "bounding redirect=None decimal=9");
+    // Add the selection as an overlay
+    selectWindow(InputFileNameI);
+    makeRectangle(PosX, PosY, Width, Height);
+    run("Remove Overlay");
+    run("Add Selection...");
+    run("Select None");
+    // Save the File as TIF
+    selectWindow(InputFileNameI);
+    saveAs("Tif", OutputImagePath+InputFileNameINoExt);
+    close();
 
-  run("Measure");
+    // Update the progress bar
+    showProgress(FileI, InputFileList.length);
+    call("java.lang.System.gc"); // Run garbage collector
+  }
+  //////////////////////////////////////////////// Process each File
 
-  // Get the Values of the rectangular selection
-  PosX=getResult("BX");
-  PosY=getResult("BY");
-  Width=getResult("Width");
-  Height=getResult("Height");
-  run("Clear Results");
-}////////////// end of if 4 markers could not be automatically detected
 
-///////////// Append the coordinates to the CSV File
-File.append(InputFileNameINoExt+CellSeparator+Width+CellSeparator+Height+CellSeparator+RealWidthCm+CellSeparator+RealHeightCm,TXTFilePath);
 
-////////////// Add the selection as an overlay
-selectWindow(InputFileNameI);
-makeRectangle(PosX, PosY, Width, Height);
-run("Remove Overlay");
-run("Add Selection...");
-
-// Save the File as TIF
-selectWindow(InputFileNameI);
-saveAs("Tif", OutputImagePath+InputFileNameINoExt);
-close();
-
-// Update the progress bar
-showProgress(FileI, InputFileList.length);
-// Close results windows if it is open
-//if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");}
-}/////////////////////End of for Filei loop
-
-CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName);
+  //////////////////////////////////////////////// Closing Dialog
+  CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName);

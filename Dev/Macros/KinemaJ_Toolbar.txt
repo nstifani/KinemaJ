@@ -1,3 +1,12 @@
+// Function written by Nicolas Stifani nstifani@gmail.com for more info
+
+// Defines Global Variables
+// requires("1.51n");
+// var PluginName="KinemaJ";
+// var MacroName="KinemaJ Toolbar";
+// CellSeparator= "\t";
+// LineSeparator="\n";
+
 
 <startupAction>
 IJPosX=screenWidth*0.1;
