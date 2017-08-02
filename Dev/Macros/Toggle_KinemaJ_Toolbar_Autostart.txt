@@ -3,11 +3,11 @@
 // Defines Global Variables
 requires("1.51n");
 var PluginName="KinemaJ";
-var MacroName="Calibrate Videos";
-var FileExt="AVI";
+var MacroName="Toogle Autostart";
+var FileExt="";
 var MinNbFile=1;
-var FolderSuffix="Calibrated";
-var SubDirArray=newArray("Calibrated Images");
+var FolderSuffix="";
+var SubDirArray=newArray("");
 CellSeparator= "\t";
 LineSeparator="\n";
 
@@ -262,6 +262,8 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
   }
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
   beep();
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
@@ -271,31 +273,24 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
   Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
-  CloseUtilityWindows(ListUtilityWindows);
   Dialog.show();
 }  ///////////////////////// End of Close Function
 
 ////// CleanExit Function
 function CleanExit(MessageQuit){
-  if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
-  if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
-  if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
-  if(isOpen("B&C")){    selectWindow("B&C");    run("Close");  }//End of Close the Brightness window
-
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
   }
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
   beep();
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(MessageQuit);
   Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
-  CloseUtilityWindows(ListUtilityWindows);
   Dialog.show();
   exit();
 }  ///////////////////////// End of CleanExit Function
@@ -315,128 +310,118 @@ function CloseUtilityWindows(ListUtilityWindows){
 //////////End of Close UtilityWindows
 ////////////////////End of General Functions
 
-function StartUpMacro {
+//////////Specific function
+
+////// CleanExitandQuit Function
+function CleanExitandQuit(MessageQuit){
+  ListImages=getList("image.titles");
+  for(n=0; n<ListImages.length; n++){
+    ImageN=ListImages[n];
+    selectWindow(ImageN);    run("Close");
+  }
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  beep();
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageQuit);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  Dialog.show();
+  run("Quit");
+}  ///////////////////////// End of CleanExitandQuit Function
 
 
-} // end of function StartUpMacro
 
 
+//// Check StartUp Macro for Content
+var MacroFolder=eval("script", "IJ.getDirectory(\"macros\");");// Get Macro Folder
+var StartUpMarcro="RunAtStartup.ijm";// Get StartUp Macro Name
+var AutostartStatus="inactive"; // Set autostart status
+var WriteContent = "run\(\""+PluginName+" Toolbar\"\)\;"; // Content to check in the startup macro
+var MatchContent = "run\\(\""+PluginName+" Toolbar\"\\)\\;";
+var RowAutostartStatus=""; // Row at which the autostart status has changed
+var StartUpMacroContentArray;
 
+function CheckStartUpMacro() {
+  // If the RunAtStartup does not exist create an new one
+  if (!File.exists(MacroFolder+StartUpMarcro)){
+    TempStartUpMacro=File.open(MacroFolder+StartUpMarcro);
+    File.close(TempStartUpMacro);
+  } // end of create an empty RunAtStartUp if it does not yet exist
 
+  // Open StartUpMacro Content
+  StartUpMacroContent=File.openAsString(MacroFolder+StartUpMarcro);
+  // Create an Array
+  StartUpMacroContentArray=split(StartUpMacroContent, "\n");
 
+  // Screen the Content of Startup and if matches change the status to active
+  for (n=0; n<StartUpMacroContentArray.length; n++){
 
+    if(matches(StartUpMacroContentArray[n], MatchContent)==1){
+      AutostartStatus="active";
+      RowAutostartStatus=n;
+      n=StartUpMacroContentArray.length-1; // skip the screen
+    }// end of if
+  } // end of for
 
+} // end of function CheckStartUpMacro
 
-
-
-
-// Look if is already loaded at startup
-MacroFolder=eval("script", "IJ.getDirectory(\"macros\");");
-StartUpMarcro="RunAtStartup.ijm";
-// If the RunAtStartup do not exists create an empty new one
-if (File.exists(MacroFolder+StartUpMarcro)==0){
-  NewStartUpMacro=File.open(MacroFolder+StartUpMarcro);
-  File.close(NewStartUpMacro);
-} // end of create an empty RunAtStartUp if it does not yet exist
-StartUpMacroContent=File.openAsString(MacroFolder+StartUpMarcro);
-StartUpMacroContentArray=split(StartUpMacroContent, "\n");
-
-// Set the Status as inactive
-AutostartStatus="inactive";
-
-// Screen the Content of Startup and if matches change the status to active
-for (n=0; n<StartUpMacroContentArray.length; n++){
-  if(matches(StartUpMacroContentArray[n], "run\\(\""+PluginName+" Toolbar\"\\)\\;")==1){
-    AutostartStatus="active";
-    RowAutostartStatus=n;
-  }// end of if
-} // end of for
-
-
-// Prompt user dialog
-Dialog.create(PluginName);
-Dialog.setInsets(0,0,0);
-Dialog.addMessage(PluginName+" Autostart is currently " +AutostartStatus+".");
-Dialog.setInsets(15,0,0);
-Dialog.addMessage("What would you like to do?");
-Dialog.setInsets(0,0,0);
-// If the status is active propose 2 choices
-if(AutostartStatus=="active"){
-  AutostartOptionArray=newArray("Keep "+PluginName+" Autostart Active", "Remove "+PluginName+" Autostart");
-  Dialog.addRadioButtonGroup("", AutostartOptionArray,2,1,"Keep "+PluginName+" Autostart Active");
-  // if status is inactive propose two other choices
-} else if (AutostartStatus=="inactive"){
-  AutostartOptionArray=newArray("Activate "+PluginName+" Autostart", "Keep "+PluginName+" Autostart OFF for now");
-  Dialog.addRadioButtonGroup("", AutostartOptionArray,2,1,"Activate "+PluginName+" Autostart");
-}
-Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
-Dialog.show();
-AutostartChoice = Dialog.getRadioButton();
-
-
-if (AutostartChoice=="Keep "+PluginName+" Autostart Active" || AutostartChoice=="Keep "+PluginName+" Autostart OFF for now"){
-  // do nothing
-  // if user wants to remove autostart
-} else if (AutostartChoice=="Remove "+PluginName+" Autostart"){
-
-  //Create an empty string
-  NewStartUpMacroContent="";
-  // Reconstruct the StartUpMacro omitting the Rowwith from the array
+function RemoveContentStartUpMacro(StartUpMacroContentArray, RowAutostartStatus) {
+  if (File.exists(MacroFolder+StartUpMarcro)==1){
+     TempStartUpMacro=File.delete(MacroFolder+StartUpMarcro);
+   }
+  TempStartUpMacro=File.open(MacroFolder+StartUpMarcro);
+  File.close(TempStartUpMacro);
   for (n=0; n<StartUpMacroContentArray.length; n++){
     if(n==RowAutostartStatus){
-      //do nothing
+      n++;
     } else {
-      // reconstruct the autostart from the array
-      NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
-    } // end of if
-  } // end of for
-  // Save the File startup with the new content
-  File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
-
-
-
-  ///////////////////// Initial Dialog Box
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(10, 0, 00);
-  Dialog.addMessage("To validate the modification ImageJ needs to restart.");
-  Dialog.setInsets(10, 60, 00);
-  Dialog.addMessage("Do you want to quit ImageJ now?");
-  Dialog.setInsets(0, 120, 0);
-  Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
-  Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
-  Dialog.show();
-  RestartChoice=Dialog.getRadioButton();
-  if(RestartChoice=="Quit"){run("Quit");}
-
-  // if user wants to activate autostart
-} else if (AutostartChoice=="Activate "+PluginName+" Autostart"){
-  //Create an empty string
-  NewStartUpMacroContent="";
-  // reconstruct the autostart from the array
-  for (n=0; n<StartUpMacroContentArray.length; n++){
-    NewStartUpMacroContent=NewStartUpMacroContent+StartUpMacroContentArray[n]+"\n";
-  }
-  // add the  autostart at the end
-  NewStartUpMacroContent=NewStartUpMacroContent+"run(\""+PluginName+" Toolbar\")\;"+"\n";
-  // Save the File startup with the new content
-  File.saveString(NewStartUpMacroContent, MacroFolder+StartUpMarcro);
-  if (!isOpen(PluginName+" Toolbar")){
-    run(PluginName+" Toolbar");
-    selectWindow(PluginName+" Toolbar");
-    setLocation(IJPosX+IJSizeX+Spacer,IJPosY);
+      File.append(StartUpMacroContentArray[n],MacroFolder+StartUpMarcro);
+    }
   }
 
+}
 
-  ///////////////////// Closing Dialog Box
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(10, 0, 00);
-  Dialog.addMessage("To validate the modification ImageJ needs to restart.");
-  Dialog.setInsets(10, 60, 00);
-  Dialog.addMessage("Do you want to quit ImageJ now?");
 
-  Dialog.setInsets(0, 120, 0);
-  Dialog.addRadioButtonGroup("", newArray("Quit", "Don't Quit"), 2, 1, "Don't Quit");
-  Dialog.setLocation(IJPosX+Spacer, IJPosY+IJSizeY+Spacer);
-  Dialog.show();
-  RestartChoice=Dialog.getRadioButton();
-  if(RestartChoice=="Quit"){run("Quit");}
+
+// Macros starts here
+CheckStartUpMacro();
+
+// Prompt User to change the autostart status
+MessageError=PluginName+" Autostart is currently " +AutostartStatus+".";
+MessageFix="What would you like to do?";
+// Response Array is different depending on the status
+if(AutostartStatus=="active"){
+  ErrorResponseArray=newArray("Keep "+PluginName+" Autostart Active", "Remove "+PluginName+" Autostart");
+} else if (AutostartStatus=="inactive"){
+  ErrorResponseArray=newArray("Activate "+PluginName+" Autostart", "Keep "+PluginName+" Autostart OFF for now");
+}
+// Display the prompt
+UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+
+// Apply user responses
+if (UserResponseErrorDialog=="Keep "+PluginName+" Autostart Active" || UserResponseErrorDialog=="Keep "+PluginName+" Autostart OFF for now"){
+  // do nothing
+}else { // do something
+  if (UserResponseErrorDialog=="Remove "+PluginName+" Autostart"){ // If user want to remove the autostart
+    RemoveContentStartUpMacro(StartUpMacroContentArray, RowAutostartStatus);
+  }else if (UserResponseErrorDialog=="Activate "+PluginName+" Autostart"){ // Activate the autostart
+    File.append(WriteContent,MacroFolder+StartUpMarcro);
+    if (!isOpen(PluginName+" Toolbar")){ // Open up the toolbar
+      run(PluginName+" Toolbar");
+      selectWindow(PluginName+" Toolbar");
+      setLocation(ToolbarPosX,ToolbarPosY);
+    } // end of if toolbar is not present yet
+  } // end of activate
+
+  /// Prompt for restart if modification is done
+  MessageError="To validate the modification ImageJ needs to restart.";
+  MessageFix="Do you want to quit ImageJ now?";
+  MessageQuit="The function \""+ MacroName+"\" will now close ImageJ.";
+  ErrorResponseArray=newArray("Don't Quit", "Quit ImageJ");
+  UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+  if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+    CleanExitandQuit(MessageQuit);
+  }// end of user response
+}// end of if modification is done

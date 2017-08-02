@@ -263,9 +263,9 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
   }
-
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
   beep();
-
   /////////////////////// Closing Dialog Box
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
@@ -274,33 +274,25 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
   Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
-  CloseUtilityWindows(ListUtilityWindows);
+
   Dialog.show();
 }  ///////////////////////// End of Close Function
 
 ////// CleanExit Function
 function CleanExit(MessageQuit){
-
-  if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
-  if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
-  if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
-  if(isOpen("B&C")){    selectWindow("B&C");    run("Close");  }//End of Close the Brightness window
-
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){
     ImageN=ListImages[n];
     selectWindow(ImageN);    run("Close");
-
   }
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
   beep();
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(MessageQuit);
   Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
-  CloseUtilityWindows(ListUtilityWindows);
   Dialog.show();
   exit();
 }  ///////////////////////// End of CleanExit Function
