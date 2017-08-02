@@ -21,24 +21,8 @@ run("Calibrate Videos");
 </macro>
 </line>
 
-//<line>
-//<button>1 line 2
-//label=2a Get ROI & Threshold Values
-//icon=noicon
-//arg=<macro>
-//run("Get ROI and Threshold Values");
-//</macro>
-
-//<button>2 line 2
-//label=2b Crop & Threshold Videos
-//icon=noicon
-//arg=<macro>
-//run("Crop and Threshold Videos");
-//</macro>
-//</line>
-
 <line>
-<button>1 line 3
+<button>1 line 2
 label=2 Pre-Process Videos
 icon=noicon
 arg=<macro>
@@ -48,7 +32,7 @@ run("Pre-process Videos");
 
 
 <line>
-<button>1 line 4
+<button>1 line 3
 label=3 Track Markers
 icon=noicon
 arg=<macro>
@@ -58,14 +42,14 @@ run("Track Markers");
 
 
 <line>
-<button>1 line 5
+<button>1 line 4
 label=Toggle Autostart
 icon=noicon
 arg=<macro>
 run("Toggle KinemaJ Toolbar Autostart");
 </macro>
 
-<button>2 line 5
+<button>2 line 4
 label=Close
 icon=noicon
 arg=<close>

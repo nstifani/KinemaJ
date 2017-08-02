@@ -173,7 +173,7 @@ function SelectInputDir(MinNbFile, FileExt){
     if(endsWith(toLowerCase(InputItemList[ItemI]), "."+toLowerCase(FileExt))){ // Select files with correct extension
       InputCorrectExtFileList=Append(InputCorrectExtFileList, InputItemList[ItemI]);
     }
-  }
+  } 
   NbFileWithCorrectExt=InputCorrectExtFileList.length;
   if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
     MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";

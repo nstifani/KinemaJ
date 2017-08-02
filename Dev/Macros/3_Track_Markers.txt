@@ -1,94 +1,329 @@
 // Function written by Nicolas Stifani nstifani@gmail.com for more info
 
-// Header
-requires("1.50f");
-PluginName="KinemaJ";
-MacroName="Track Markers";
+// Defines Global Variables
+requires("1.51n");
+var PluginName="KinemaJ";
+var MacroName="Track Markers";
+var FileExt="TIF";
+var MinNbFile=1;
+var FolderSuffix="Tracked";
+var SubDirArray=newArray("Tables","Labels","Cleaned","Parameters");
+CellSeparator= "\t";
+LineSeparator="\n";
 
-// Set the Default Parameters
-// Remember here we invert Y values.
-run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack displays invert redirect=None decimal=9");
-run("Input/Output...", "jpeg=100 gif=-1 file=.csv use skip copy_column copy_row save_column save_row");
-run("Misc...", "divide=Infinity hide");
 
-// Make the ImageJ preferences for threshold visualisation as Red over background
-call("ij.Prefs.set", "threshold.mode", 0);
+/////////////// Header, Set Preferences, Options and Housekeeping
+// Select All measurements, Invert Y, and use 9 decimals
+run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display invert redirect=None decimal=9");
+run("Line Width...", "line=1"); // Set Line width as 1
+run("Input/Output...", "jpeg=100 gif=-1 file=.txt use copy_row save_column"); // Set Output as Txt and save columns and ignore row numbers
+run("Point Tool...", "type=Hybrid color=yellow size=Large label show counter=0");// Set the Point tool as yellow Medium Circle
+run("Colors...", "foreground=white background=black selection=yellow"); // Set foreground and background colors Selection is yellow
+run("Appearance...", "  menu=0 16-bit=Automatic"); // Change appareance of 16bit image as automatic
+run("Misc...", "divide=Infinity"); // Make sure Miscellaneous Options are set correctly
+run("Overlay Options...", "stroke=cyan width=2 point=Hybrid size=Large fill=none apply show");
+run("Labels...", "color=White font=10 show bold");
+call("ij.Prefs.set", "threshold.mode", 0); // Make the ImageJ preferences for threshold visualisation as Red over background
+
 // Set IJ Size and position
-IJPosX=screenWidth*0.1; // The position of ImageJ in X
-IJPosY=screenHeight*0;
-IJSizeX=575; // The width of ImageJ in pixel
-IJSizeY=100;
-Spacer=20; // A spacer
-DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");"); // Adjust the position of the ImageJ bar
+IJPosX=screenWidth*0.1; // The position of ImageJ in X // Set IJ Size and position
+IJPosY=screenHeight*0; // The position of ImageJ in Y at the top of the screen
+IJSizeX=570; // The width of ImageJ toolbar in pixel
+IJSizeY=100; // The Height of ImageJ toolbar in pixel
+Spacer=25; // A spacer
+DummyVariable=eval("script","IJ.getInstance().setLocation("+IJPosX+","+IJPosY+");"); // Adjust the position of the ImageJ toolbar
 
-// Set MultiCh Toolbar Size and position
-ToolbarSizeX=240; // Size of the toolbar
-ToolbarSizeY=170;
-ToolbarPosX=IJPosX+IJSizeX+Spacer;
-ToolbarPosY=IJPosY;
+// Set Toolbar Size and position
+ToolbarSizeX=250;// Set Toolbar Size and position
+ToolbarSizeY=200; // Size of the toolbar
+ToolbarPosX=IJPosX+IJSizeX+Spacer; // Position of the Toolbar is to the right of the ImageJ toolbar
+ToolbarPosY=IJPosY; // Position of to the Toolbar in Y
 
-ListWindows=getList("window.titles");
-for(n=0; n<ListWindows.length; n++){
-  WindowN=ListWindows[n];
-  if(WindowN==PluginName+" Toolbar"){
-    // If tool bar is present place it next to the IJ bar
-    selectWindow(PluginName+" Toolbar");
-    setLocation(ToolbarPosX,ToolbarPosY);
-  }
+// Position the Toolbar
+if(isOpen(PluginName+" Toolbar")){
+  selectWindow(PluginName+" Toolbar");
+  setLocation(ToolbarPosX,ToolbarPosY);
 }
 
-//Set Threshold Window Size and Position
+// Set Threshold Window Size and Position
 ThresholdSizeX=290;
 ThresholdSizeY=260;
-ThresholdPosX=ToolbarPosX; // The Position in X of the threshold window
-ThresholdPosY=ToolbarPosY+ToolbarSizeY+Spacer;
+ThresholdPosX=ToolbarPosX; // The Position in X of the threshold window is below the toolbar
+ThresholdPosY=ToolbarPosY+ToolbarSizeY+Spacer; // Threshold toolbar is just below the plugin toolbar
 call("ij.Prefs.set", "threshold.loc", ThresholdPosX+" , "+ThresholdPosY);
 
 // Set ROI Manager Size and Position
-ROIManagerSizeX=290;
-ROIManagerSizeY=260;
-ROIManagerPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
-ROIManagerPosY=ToolbarPosY+ToolbarSizeY+Spacer;
+ROIManagerSizeX=250;
+ROIManagerSizeY=300;
+ROIManagerPosX=ToolbarPosX; // The Position in X of the ROI manager window which is to the right of the Treshold widnow
+ROIManagerPosY=ToolbarPosY+ToolbarSizeY+Spacer+ThresholdSizeY+Spacer;
 call("ij.Prefs.set", "manager.loc", ROIManagerPosX+" , "+ROIManagerPosY);
 
-// Set Results Size and Position
+// Set Results Size and Position to the right of the toolbar until the bottom of Threhsold window
 ResultsSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
-ResultsSizeY=ToolbarSizeY;
-ResultsPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+ResultsSizeY=ROIManagerPosY-Spacer;
+ResultsPosX=ToolbarPosX+ToolbarSizeX+Spacer;
 ResultsPosY=ToolbarPosY;
 call("ij.Prefs.set", "results.loc", ResultsPosX+" , "+ResultsPosY);
 call("ij.Prefs.set", "results.width", ResultsSizeX);
 call("ij.Prefs.set", "results.height", ResultsSizeY);
 
 
+// Set Log location
+LogSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
+LogSizeY=ROIManagerPosY-Spacer;
+LogPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+LogPosY=ToolbarPosY;
+call("ij.Prefs.set", "log.loc", LogPosX+" , "+LogPosY);
 
-// Define global variables
-var MinNbFile=1;
-var FileExt="TIF";
-var RequiredSubfolderArray=newArray("Cropped","Thresholded");
-var MasterInputDirPass;
-var MasterInputDirPath;
-var MasterParentDir;
-var MasterInputDirName;
+// Set Debug location
+DebugSizeX=(screenWidth-(ToolbarPosX+ToolbarSizeX+Spacer));
+DebugSizeY= ROIManagerPosY-Spacer;
+DebugPosX=ToolbarPosX+ToolbarSizeX+Spacer; // The Position in X of the ROI manager window
+DebugPosY=ToolbarPosY;
+call("ij.Prefs.set", "debug.loc", DebugPosX+" , "+DebugPosY);
+// Set point Tool location
+PointToolSizeX=250;
+PointToolSizeY=300;
+PointToolPosX= ToolbarPosX+ROIManagerSizeX+Spacer; //PointTool is at the right of the ROI Manager
+PointToolPosY= ToolbarPosY+ToolbarSizeY+Spacer+ThresholdSizeY+Spacer;
+
+// Set Brightness and contrast location
+BCSizeX=150;
+BCSizeY=300;
+BCPosX=PointToolPosX+PointToolSizeX+Spacer; // Brigthness and contrsat is at the right of PointTool
+BCPosY=ROIManagerPosY;
+call("ij.Prefs.set", "b&c.loc", BCPosX+" , "+BCPosY);
+//////////////// Header and Housekeeping
+
+
+
+//////////////// General Functions
+// Function to Append to an array
+function Append(ArrayI, Value) {
+  ArrayJ = newArray(ArrayI.length+1);
+  for (ValueI=0; ValueI<ArrayI.length; ValueI++)
+  ArrayJ[ValueI] = ArrayI[ValueI];
+  ArrayJ[ArrayI.length] = Value;
+  return ArrayJ;
+}
+
+// Function to display a message
+var MessageDialogPass;
+function MessageDialog(Message){
+  MessageDialogPass=0;
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(Message);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+  MessageDialogPass=1;
+}
+
+// Function to display an error and propose to Fix it / Try again or to quit
+var ErrorDialogPass;
+var UserResponseErrorDialog;
+function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
+  ErrorDialogPass=0;
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageError);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageFix);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0, 20, 0);
+  Dialog.addRadioButtonGroup("", ErrorResponseArray, ErrorResponseArray.length, 1, ErrorResponseArray[0]);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+  UserResponseErrorDialog=Dialog.getRadioButton();
+  return UserResponseErrorDialog;
+}
+
+// Function to select an Input Directory containing at least MinNbFile with the correct File Extension FileExt
+var SelectInputDirPass; // Switch for the dialog box
+var InputDirPath; // Path of the input directory
+var ParentDir; // ParentDirectory of the selected input directory
+var InputDirName; // Name of the Input Directory
+var NbFileWithCorrectExt; // Nb of File with the correct extension in the input directory
+var InputItemList; // List of Files and folders in the input directory (all files no matter the extension)
+var InputCorrectExtFileList; // List of files with the correct extension
+var InputFileList;
 var NbFile;
-var InputFileList; // This is the List of File with the correct extension
 
-// //////////////////////////// Initial Dialog Box
+function SelectInputDir(MinNbFile, FileExt){
+  // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
+  // FileExt This is the File extension as a string example "tif"
+  InputDirPath=getDirectory("Select a FOLDER containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a Folder
+  InputItemList=getFileList(InputDirPath); // List of Item in the selected folder
+  ParentDir=File.getParent(InputDirPath)+File.separator;
+  InputDirName=File.getName(InputDirPath);
+
+  SelectInputDirPass=0; // Switch for the Function
+  NbFileWithCorrectExt=0; // Count of Nb of Files
+  BaseNameError=0; // Switch to make sure there is only one "." in the filename
+  InputCorrectExtFileList=newArray(0);
+  UserResponseErrorDialog="";
+
+  // Evaluate the Nb of File with correct extension and add them to InputCorrectExtFileList
+  for (ItemI=0; ItemI<InputItemList.length; ItemI++){
+    if(endsWith(toLowerCase(InputItemList[ItemI]), "."+toLowerCase(FileExt))){ // Select files with correct extension
+      InputCorrectExtFileList=Append(InputCorrectExtFileList, InputItemList[ItemI]);
+    }
+  }
+  NbFileWithCorrectExt=InputCorrectExtFileList.length;
+  if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
+    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
+    ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+      CleanExit(MessageQuit);
+    } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
+      SelectInputDirPass=0;
+    }
+  } else { // if NbFileWithCorrectExt is above or equal MinNbFile Evaluate Filenames
+    InputFileList=newArray(0);
+    for (FileI=0; FileI<InputCorrectExtFileList.length; FileI++){
+      BasenameFileIArray=split(InputCorrectExtFileList[FileI],"."); // Make an array from the filename
+      if(BasenameFileIArray.length!=2){// if there is more than one . in the file name abort
+        MessageError="Sorry but the "+FileExt+" file:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
+        MessageFix="The function \""+MacroName+"\" does NOT allow filenames with more than one unique \".\" used for the file extension.";
+        ErrorResponseArray=newArray("Select Another Folder", "Ignore This File", "Cancel and Close");
+        MessageQuit="The function \""+ MacroName+"\" stopped because the file\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
+        UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+        if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+          CleanExit(MessageQuit);
+        } else if (UserResponseErrorDialog=="Ignore This File"){
+
+        } else if (UserResponseErrorDialog=="Select Another Folder") {
+          FileI=InputCorrectExtFileList.length;
+          SelectInputDirPass=0;
+        //  ErrorDialogPass=1;
+        }
+      }else { // If basename is good add it to the InputFileList
+        InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
+      }
+    }
+    // Make sure InpuFileList is > MinNbFile
+    NbFile=InputFileList.length;
+    if(NbFile<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
+      MessageError="Sorry but the Folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" File with no more than one \".\" in its filename.";
+      MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" File with one unique \".\" used for the file extension.";
+      ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+      MessageQuit="The function \""+ MacroName+"\" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File no more than one \".\" in its filename.";
+      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+      if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+        CleanExit(MessageQuit);
+      } else {
+        SelectInputDirPass=0;
+      }
+    } else if (UserResponseErrorDialog=="Select Another Folder"){
+      SelectInputDirPass=0; // InputDir Pass the criteria
+    } else {
+      SelectInputDirPass=1; // InputDir Pass the criteria
+    }
+  }
+} // End of Function Select InputDir
+
+// Function to create a new output directory
+var OutputDirPath; // The path of the output directory
+var OutputDirName; // The name of the output directory
+function CreateOutputDir(ParentDir, InputDirName, FolderSuffix){ // Folder suffix is a string appended to the input Directory
+  OutputDirPath=""+ParentDir+InputDirName+"_"+FolderSuffix+File.separator; // Create the outputdirpath
+  n=1;
+  while(File.exists(OutputDirPath)!=0){ // If the path already exist, increment with _ n until it does not exist
+    n++;
+    OutputDirPath=""+ParentDir+InputDirName+"_"+FolderSuffix+"_"+n+File.separator;
+  } // End of making sure the outpudirectory is a new folder
+  File.makeDirectory(OutputDirPath); // Create the outpudirectory
+  OutputDirName=File.getName(OutputDirPath); // Get the Name of the output directory
+}
+
+////////// Function to create subfolders within the newly create outputdirectory
+function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the desired subfolders
+  for(i=0;i<SubDirArray.length;i++){
+    SubDirPath=OutputDirPath+SubDirArray[i]+File.separator; // Because outpudirpath is unique and new the subfolders do not exist yet so no need to check if they are already present
+    File.makeDirectory(SubDirPath);
+  } // End of for
+} // End of CreateOutputSubDir function
+// NOTE:It is useful to create a string for the subdirectory paths
+// For each element in the subdirarray addMessage
+// Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+File.separator;
+// Then you can use directly the string to save within a subdirectory
+
+////// Close Function
+function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
+  beep();
+
+  ListImages=getList("image.titles");
+  for(n=0; n<ListImages.length; n++){
+    ImageN=ListImages[n];
+    selectWindow(ImageN);    run("Close");
+  }
+
+
+  /////////////////////// Closing Dialog Box
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+}  ///////////////////////// End of Close Function
+
+////// CleanExit Function
+function CleanExit(MessageQuit){
+  beep();
+  if(isOpen("Threshold")){    selectWindow("Threshold");    run("Close");  }//end of if threshold is open
+  if(isOpen("Results")){    run("Clear Results");    selectWindow("Results");    run("Close");  }//end of if Results is open
+  if(isOpen("ROI Manager")){    roiManager("reset");    selectWindow("ROI Manager");    run("Close");  }//End of Close the ROI Manager
+  if(isOpen("B&C")){    selectWindow("B&C");    run("Close");  }//End of Close the Brightness window
+
+  ListImages=getList("image.titles");
+  for(n=0; n<ListImages.length; n++){
+    ImageN=ListImages[n];
+    selectWindow(ImageN);    run("Close");
+
+  }
 Dialog.create(PluginName+" Information");
-Dialog.setInsets(0,0,0);
-Dialog.addMessage("The Function "+MacroName+" will:"
-+"\n - Prompt to select the Cropped and Thresholded folder"
-+"\n   containing Subfolder containing at least "+MinNbFile+" "+FileExt+" Files"
-+"\n - Open all "+FileExt+" Files 2 by 2 within the Subfolders"
-+"\n - Search and Track Markers"
-+"\n - Prompt User for validation"
-+"\n - Re-Analyze the video with adjusted tracking parameters or move to the next file"
-+"\n - Save the tracks, the labeled Stacks as TIF File and the Result Tables as CSV File");
-Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-Dialog.show();
-// //////////////////////////// End of Initial Dialog Box
+  Dialog.setInsets(0, 0, 0);
+  Dialog.addMessage(MessageQuit);
+  Dialog.setInsets(0, 0, 0);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  CloseUtilityWindows(ListUtilityWindows);
+  Dialog.show();
+  exit();
+}  ///////////////////////// End of CleanExit Function
 
-
+//////////Close UtilityWindows
+function CloseUtilityWindows(ListUtilityWindows){
+// Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
+    UtilityWindowI=ListUtilityWindows[WindowI];
+    if(isOpen(UtilityWindowI)){
+      if(UtilityWindowI=="Results"){        run("Clear Results");       }
+      if(UtilityWindowI=="ROI Manager"){       roiManager("reset");      }
+        selectWindow(UtilityWindowI); run("Close");
+      }
+  }
+}
+//////////End of Close UtilityWindows
+////////////////////End of General Functions
+RequiredSubfolderArray=newArray("Cropped", "Thresholded");
+var MasterInputDirPass=0;
+var MasterInputDirName;
+var MasterInputDirPath;
+///////////////// Specific function
 function SelectMasterInputDir(MinNbFile, FileExt, RequiredSubfolderArray){
   // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
   // FileExt This is the File extension as a string example "TIF" or "AVI"
@@ -248,27 +483,31 @@ function SelectMasterInputDir(MinNbFile, FileExt, RequiredSubfolderArray){
     }// End of Else the folder has the correct subfolders
   } // End of Else the folder has the right name
 }//SelectMasterInputDir function
+///////////End of specific funciton
 
-function CreateOutputDir(FolderSuffix){
-  InputDirName=replace(MasterInputDirName,"_Cropped and Thresholded_?[0-9]*","");
 
-  OutputDirPath=MasterParentDir+InputDirName+"_"+FolderSuffix+File.separator;
-  n=1;
-  while(File.exists(OutputDirPath)!=0){
-    n++;
-    OutputDirPath=MasterParentDir+InputDirName+"_"+FolderSuffix+"_"+n+File.separator;
-  }
-  File.makeDirectory(OutputDirPath);
-  OutputDirName=File.getName(OutputDirPath);
-}
 
-function CreateOutputSubDir(SubDirArray) {
-  for(i=0;i<SubDirArray.length;i++){
-    SubDirPath=OutputDirPath+SubDirArray[i]+File.separator;
-    File.makeDirectory(SubDirPath);
-  } // End of for
-} // End of CreateOutputSubDir function
 
+
+
+
+
+
+
+
+
+//Macros starts here
+// Intial Message
+InitialMessage="The function \""+MacroName+"\" will:"
++"\n - Prompt to select a \"Cropped and Thresholded\" folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process"
++"\n\nFor each "+FileExt+" file:"
++"\n - Search and track markers"
++"\n - Prompt user for validation"
++"\n - Re-analyze the video with adjusted parameters until satisfied"
++"\n - Save the cleaned videos, labeled videos and the  tracked trajectories as TIF files"
++"\n - Save the result tables as TXT files";
+
+MessageDialog(InitialMessage); // Display the Initial Message
 
 do{
   SelectMasterInputDir(MinNbFile,FileExt,RequiredSubfolderArray);
@@ -279,9 +518,9 @@ do{
 var OutputDirPath;
 var OutputDirName;
 // Create OutputDirectory with the Folder suffix
-var FolderSuffix="Tracked";
-CreateOutputDir(FolderSuffix);
-//
+InputDirName=replace(MasterInputDirName,"_Cropped and Thresholded_?[0-9]*","");
+CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
+
 // // Create Output Subdirectory and create general variables for each SubdirectoryOuputdir Path
 var SubDirArray=newArray("Tables","Labels","Cleaned","Parameters");
 CreateOutputSubDir(SubDirArray);
@@ -292,30 +531,23 @@ OutputDirPathCleaned=""+OutputDirPath+"Cleaned"+File.separator;
 OutputDirPathParameters=""+OutputDirPath+"Parameters"+File.separator;
 
 
-
-
-
-
-
-
-
 //////////////////////////Process each file
-for (Filei = 0; Filei < InputFileList.length; Filei++){
+for (FileI = 0; FileI < InputFileList.length; FileI++){
   setBatchMode(true);
-  InputFileNamei = InputFileList[Filei];
-  Basename=split(InputFileNamei, ".");
-  InputFileNameiNoExt=Basename[0];
-  InputFilePathi = MasterInputDirPath+"Thresholded"+File.separator+InputFileNamei;
-  open(InputFilePathi);
+  InputFileNameI = InputFileList[FileI];
+  Basename=split(InputFileNameI, ".");
+  InputFileNameINoExt=Basename[0];
+  InputFilePathI = MasterInputDirPath+"Thresholded"+File.separator+InputFileNameI;
+  open(InputFilePathI);
 
   if(nSlices==1){
     Dialog.create(PluginName+" Information");
-    Dialog.addMessage("Sorry \"" + InputFileNameiNoExt+ "\" is not a Stack."
+    Dialog.addMessage("Sorry \"" + InputFileNameINoExt+ "\" is not a Stack."
     +"\nPlease use Analyze>Analyze particles... to detect Markers on images. "
-    +"\nKinemaJ will ignore \""+InputFileNameiNoExt+"\" and proceed to the next file.");
+    +"\nKinemaJ will ignore \""+InputFileNameINoExt+"\" and proceed to the next file.");
     Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
     Dialog.show();
-    selectWindow(InputFileNamei);
+    selectWindow(InputFileNameI);
     close();
   } else if (nSlices>1){
     /////////////////////// Get automatic tracking parameters
@@ -344,7 +576,7 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
       MinMarkerSize=floor(MeanArea*0.25);
       MaxMarkerSize=round(MeanArea*4);
       MaxMarkerVelocity=floor(MeanDistance*0.75); // Using the MaxMarker velocity right below the minimum distance between marker to avoid track mixing
-      selectWindow(InputFileNamei);
+      selectWindow(InputFileNameI);
       getDimensions(ImageWidth, ImageHeight, NBchannels, NBFrames, NBStacks);
       MinTrackLength=floor(NBFrames/9); // why 9? Because ImageJ jump by 10% when clicking on the stack scroll bar
 
@@ -420,17 +652,17 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
       call("MTrack2_.setProperty","showLabels","true");
       call("MTrack2_.setProperty","skipDialogue","true");
 
-      selectWindow(InputFileNamei);
+      selectWindow(InputFileNameI);
       setLocation(IJPosX,IJPosY+IJSizeY+Spacer,IJSizeX,screenHeight*0.3);
       getLocationAndSize(ThresholdedImagePosX, ThresholdedImagePosY, ThresholdedImageSizeX, ThresholdedImageSizeY);
       run("MTrack2");
-      selectWindow(InputFileNamei+" labels");
+      selectWindow(InputFileNameI+" labels");
       rename("Tracked");
       setLocation(IJPosX,IJPosY+IJSizeY+Spacer+ThresholdedImageSizeY+Spacer,IJSizeX, screenHeight*0.3);
       getLocationAndSize(TrackedImagePosX,TrackedImagePosY,TrackedImageSizeX,TrackedImageSizeY);
 
       if(!isOpen("Original")){ // Open the Cropped file if it is not already opened and call it Original
-        InputFilePathiCropped = MasterInputDirPath+"Cropped"+File.separator+InputFileNamei;
+        InputFilePathiCropped = MasterInputDirPath+"Cropped"+File.separator+InputFileNameI;
         open(InputFilePathiCropped);
         rename("Original");
       }
@@ -449,7 +681,7 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
       setForegroundColor(255, 255, 255); // Foreground is white
       setBackgroundColor(0, 0, 0); // Background is black
       setTool(17); // Select the Bursh
-      selectWindow(InputFileNamei);
+      selectWindow(InputFileNameI);
 
       waitForUser("KinemaJ Information", ""
       +"- Inspect the tracked video (middle)"
@@ -532,7 +764,7 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
 
         // Apply the processing options
         if(FlipChoice==1){
-          selectWindow(InputFileNamei);
+          selectWindow(InputFileNameI);
           run("Flip Horizontally", "stack");
           if(isOpen("Original")){ // Open the Cropped file if it is not already opened and call it Original
             selectWindow("Original");
@@ -542,25 +774,25 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
         }
 
         if(RemoveNoiseChoice==1){
-          selectWindow(InputFileNamei);
+          selectWindow(InputFileNameI);
           run("Open", "stack");
           RemoveNoiseChoice==0; // Reset the processing option to default
         }
 
         if(AmplifyMarkerChoice==1){
-          selectWindow(InputFileNamei);
+          selectWindow(InputFileNameI);
           run("Dilate", "stack");
           AmplifyMarkerChoice==0; // Reset the processing option to default
         }
 
         if(UnmergeMarkerChoice==1){
-          selectWindow(InputFileNamei);
+          selectWindow(InputFileNameI);
           run("Watershed", "stack");
           UnmergeMarkerChoice==0; // Reset the processing option to default
         }
 
         if(ReduceMarkerChoice==1){
-          selectWindow(InputFileNamei);
+          selectWindow(InputFileNameI);
           run("Erode", "stack");
           ReduceMarkerChoice==0; // Reset the processing option to default
         }
@@ -572,13 +804,13 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
       selectWindow("Original");
       close();
       selectWindow("Tracked");
-      saveAs("Tif", OutputDirPathLabels+InputFileNameiNoExt+"_Labels.tif");
+      saveAs("Tif", OutputDirPathLabels+InputFileNameINoExt+"_Labels.tif");
       close();
-      selectWindow(InputFileNamei);
+      selectWindow(InputFileNameI);
       setBatchMode(true);
       ////////// Re Run the Mtrack2 but saving the data this time in CSV file
       // Create output path name for excel file
-      OutputTablePathi=OutputDirPathTables+InputFileNameiNoExt+".CSV";
+      OutputTablePathi=OutputDirPathTables+InputFileNameINoExt+".CSV";
       // Invert the Y coordinates
       run("Set Measurements...", "invert redirect=None decimal=3");
       // Set the parameters of Mtrack2
@@ -598,15 +830,15 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
       run("Clear Results");
 
       // Save the Cleaned version of the file
-      selectWindow(InputFileNamei);
-      saveAs("Tif", OutputDirPathCleaned+InputFileNameiNoExt+"_Cleaned.tif");
+      selectWindow(InputFileNameI);
+      saveAs("Tif", OutputDirPathCleaned+InputFileNameINoExt+"_Cleaned.tif");
       close();
 
       // Save the Tracking parameters
-      ParametersData = File.open(OutputDirPathParameters+InputFileNameiNoExt+"_TrackingParameters.csv");
+      ParametersData = File.open(OutputDirPathParameters+InputFileNameINoExt+"_TrackingParameters.csv");
       CellSeparator= ",";
       LineSeparator="\n";
-      print(ParametersData, "Filename"+CellSeparator+InputFileNameiNoExt+LineSeparator);
+      print(ParametersData, "Filename"+CellSeparator+InputFileNameINoExt+LineSeparator);
       print(ParametersData, "Min Marker Size (pixel^2)"+CellSeparator+MinMarkerSize+LineSeparator);
       print(ParametersData, "Max Marker Size (pixel^2)"+CellSeparator+MaxMarkerSize+LineSeparator);
       print(ParametersData, "Max Marker Velocity (pixel/frame)"+CellSeparator+MaxMarkerVelocity+LineSeparator);
@@ -617,46 +849,12 @@ for (Filei = 0; Filei < InputFileList.length; Filei++){
   } // If nSlices>1
 
   // Update the progress bar
-  showProgress(Filei, InputFileList.length);
-}/////////////////////End of for Filei loop
+  showProgress(FileI, InputFileList.length);
+}/////////////////////End of for FileI loop
 
-// Close Threshold windows if it is open
-if(isOpen("Threshold")){
-  selectWindow("Threshold");
-  run("Close");
-}//end of if threshold is open
-
-// Close results windows if it is open
-if(isOpen("Results")){
-  run("Clear Results");
-  selectWindow("Results");
-  run("Close");
-}//end of if Results is open
-
-
-if(isOpen("Synchronize Windows")){
-  selectWindow("Synchronize Windows");
-  run("Close");
-}
-
-
-//Restore the MTack2 dialog box
+// Restore the MTack2 dialog box
 call("MTrack2_.setProperty","skipDialogue","false");
-//Restore the MTack2 dialog box
+// Restore the MTack2 dialog box
 call("MTrack2csv_.setProperty","skipDialogue","false");
 
-
-
-
-beep();
-
-///////////////////// Closing Dialog Box
-Dialog.create(PluginName+" Information");
-Dialog.setInsets(0, 0, 0);
-Dialog.addMessage(NbFile+" "+ FileExt+ " File in the Folder: \"" +MasterInputDirName+"\" have been processed successfully.");
-Dialog.setInsets(10, 0, 0);
-Dialog.addMessage("Files are saved in: "+OutputDirName);
-Dialog.setInsets(10, 0, 0);
-Dialog.addMessage("Files are saved in the Folder: \""+OutputDirName+"\".");
-Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-Dialog.show();
+CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, MasterInputDirName, OutputDirName);

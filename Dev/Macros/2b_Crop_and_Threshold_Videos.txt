@@ -202,7 +202,7 @@ function SelectInputDir(MinNbFile, FileExt){
         } else if (UserResponseErrorDialog=="Select Another Folder") {
           FileI=InputCorrectExtFileList.length;
           SelectInputDirPass=0;
-        //  ErrorDialogPass=1;
+          //  ErrorDialogPass=1;
         }
       }else { // If basename is good add it to the InputFileList
         InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
@@ -293,7 +293,7 @@ function CleanExit(MessageQuit){
     selectWindow(ImageN);    run("Close");
 
   }
-Dialog.create(PluginName+" Information");
+  Dialog.create(PluginName+" Information");
   Dialog.setInsets(0, 0, 0);
   Dialog.addMessage(MessageQuit);
   Dialog.setInsets(0, 0, 0);
@@ -306,18 +306,207 @@ Dialog.create(PluginName+" Information");
 
 //////////Close UtilityWindows
 function CloseUtilityWindows(ListUtilityWindows){
-// Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
     UtilityWindowI=ListUtilityWindows[WindowI];
     if(isOpen(UtilityWindowI)){
       if(UtilityWindowI=="Results"){        run("Clear Results");       }
       if(UtilityWindowI=="ROI Manager"){       roiManager("reset");      }
-        selectWindow(UtilityWindowI); run("Close");
-      }
+      selectWindow(UtilityWindowI); run("Close");
+    }
   }
 }
 //////////End of Close UtilityWindows
 ////////////////////End of General Functions
+
+////////////////////Start of Specific Function
+
+var SelectFilePass=0;
+var FileFoundAuto=0;
+var FileNameArray = newArray(0);
+var ROIPosXArray = newArray(0);
+var ROIPosYArray = newArray(0);
+var ROIWidthArray = newArray(0);
+var ROIHeightArray = newArray(0);
+var ThresholdLowerValueArray = newArray(0);
+var ThresholdUpperValueArray = newArray(0);
+
+function SelectFile(FolderSuffix, FileName, FileExt, FileHeaderList){
+  NbPotentialFolder=0;
+  FileExtPass=0;
+  FileHeaderPass=0;
+  FileDataPass=0;
+  SelectedInputFileList=newArray(0);
+
+  // Search automatically for potential TXT file in Parent Directory
+  ParentDirList=getFileList(ParentDir);
+  for(N=0;N<ParentDirList.length;N++){
+    ItemN=ParentDirList[N];
+    if(matches(ItemN, InputDirName+"_"+FolderSuffix+"/?_?[0-9]*/?")){
+      NbPotentialFolder++;
+      ItemNumber=N;
+    }
+  }
+  if(NbPotentialFolder==1 && FileFoundAuto!=1){ // If one correct folder and not already found
+    FilePath=ParentDir+ParentDirList[ItemNumber]+FileName+".txt";
+    if(File.exists(FilePath)){
+      FileFoundAuto=1;
+    }else{ // if  potential file is not found prompt for it
+      FilePath=File.openDialog("Select the "+FileExt+" File containing "+FileName);
+    }
+  } else { // if no potential file prompt for it
+    FilePath=File.openDialog("Select the "+FileExt+" File containing "+FileName);
+  }
+
+  if(!endsWith(toLowerCase(FilePath), "."+toLowerCase(FileExt))){ // If file does not have the correct extension
+    MessageError="Sorry but the file:\n\"" +File.getName(FilePath)+"\"\nis not a "+FileExt+" file.";
+    MessageFix="The function \""+MacroName+"\" requires a "+FileExt+" file providing "+FileName+".";
+    ErrorResponseArray=newArray("Select Another "+FileExt+" File", "Cancel and Close");
+    MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+File.getName(FilePath)+"\"\nwas not a "+FileExt+" file.";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+      CleanExit(MessageQuit);
+    } else { // Else user want to select another file
+      SelectFilePass=0;
+    }
+  } else { // File has the correct extension
+    FileExtPass=1;
+    // Check file has the correct header
+    run("Results... ", "open=&FilePath");
+    FileHeaderArray=split(String.getResultsHeadings);
+    if(isOpen("Results")){       run("Clear Results");      selectWindow("Results");      run("Close");    }
+    for (ItemI=0; ItemI<FileHeaderList.length; ItemI++){ // Screen the RequiredItem List
+      for (ItemN=0; ItemN<FileHeaderArray.length; ItemN++){
+        if(FileHeaderList[ItemI]==FileHeaderArray[ItemN]){
+          FileHeaderPass++;
+          ItemN=FileHeaderArray.length; // End the loop once found
+        }
+      }
+    }
+    if(FileHeaderPass!=FileHeaderList.length){
+      MessageError="Sorry but the file:\n\"" +File.getName(FilePath)+"\"\ndoes not contain the required header (columns).";
+      MessageFix="The function \""+MacroName+"\" requires the following columns:";
+      for (n=0;n<FileHeaderList.length;n++){
+        MessageFix=MessageFix+"\n"+FileHeaderList[n];
+      }
+      ErrorResponseArray=newArray("Select Another "+FileExt+" File", "Cancel and Close");
+      MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+File.getName(FilePath)+"\"\ndid not contain the required header.";
+      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+      if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+        CleanExit(MessageQuit);
+      } else { // Else user want to select another file
+        SelectFilePass=0;
+      }
+    } else { // required hearer is passed
+      FileHeaderPass=1;
+
+      run("Results... ", "open=&FilePath");
+      // Create arrays
+      FileNameArray = newArray(0);
+      ROIPosXArray = newArray(0);
+      ROIPosYArray = newArray(0);
+      ROIWidthArray = newArray(0);
+      ROIHeightArray = newArray(0);
+      ThresholdLowerValueArray = newArray(0);
+      ThresholdUpperValueArray = newArray(0);
+
+      for (n=0;n<nResults;n++){ // Populate the arrays
+        FileNameArray= Append(FileNameArray, getResultString("Filename", n));
+        ROIPosXArray= Append(ROIPosXArray, getResultString("ROIPosX", n));
+        ROIPosYArray= Append(ROIPosYArray, getResultString("ROIPosY", n));
+        ROIWidthArray= Append(ROIWidthArray, getResultString("ROIWidth", n));
+        ROIHeightArray= Append(ROIHeightArray, getResultString("ROIHeight", n));
+        ThresholdLowerValueArray= Append(ThresholdLowerValueArray, getResultString("ThresholdLowerValue", n));
+        ThresholdUpperValueArray= Append(ThresholdUpperValueArray, getResultString("ThresholdUpperValue", n));
+      } // end of populating the array
+      if(isOpen("Results")){       run("Clear Results");      selectWindow("Results");      run("Close");    }
+
+
+      FilenamePass=0;
+
+      for (FileI=0; FileI<InputFileList.length; FileI++){ // Screen the each file from InputFileList
+        InputFileNameI=InputFileList[FileI];
+        BasenameArray=split(InputFileNameI,".");
+        InputFileNameINoExt=BasenameArray[0];
+
+        for (ItemN=0; ItemN<FileNameArray.length; ItemN++){ // Screen filenames in the selected file
+          if(toLowerCase(InputFileNameINoExt)==toLowerCase(FileNameArray[ItemN])){
+            FilenamePass++;
+            if(
+            ROIPosXArray[ItemN]>=0
+            && ROIPosYArray[ItemN]>=0
+            && ROIWidthArray[ItemN]>0
+            && ROIHeightArray[ItemN]>0
+            && ThresholdLowerValueArray[ItemN]>0
+            && ThresholdUpperValueArray[ItemN]>0
+            && !(isNaN(ROIPosXArray[ItemN]))
+            && !(isNaN(ROIPosYArray[ItemN]))
+            && !(isNaN(ROIWidthArray[ItemN]))
+            && !(isNaN(ROIHeightArray[ItemN]))
+            && !(isNaN(ThresholdLowerValueArray[ItemN]))
+            && !(isNaN(ThresholdUpperValueArray[ItemN]))
+            ){
+              FileDataPass++;
+            }
+          }
+        }
+
+
+
+        // If after screening the file the filname is not found
+        if (FileI+1!=FilenamePass || FileI+1!=FileDataPass){
+          if (FileI+1!=FilenamePass){
+            MessageError="Sorry but the file:\n\""+InputFileList[FileI]+"\"\nis not present in the selected "+FileExt+" file.";
+            MessageFix="The function \""+MacroName+"\" requires values in a "+FileExt+" file for each input file in the folder:\n\""+InputDirName+"\".";
+          } else{
+            MessageError="Sorry but the file:\n\""+InputFileList[FileI]+"\"\nhas no valid data in the selected "+FileExt+" file.";
+            MessageFix="The function \""+MacroName+"\" requires valid data in a "+FileExt+" file for each input file in the folder:\n\""+InputDirName+"\".";
+          }
+          MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+File.getName(FilePath)+"\"\ndid not contain valid data for the file:\n\""+InputFileList[FileI]+"\".";
+          ErrorResponseArray=newArray("Select Another "+FileExt+" File","Ignore this File", "Cancel and Close");
+          UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+          if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+            CleanExit(MessageQuit);
+          } else if(UserResponseErrorDialog=="Ignore this File"){ //User want to ignore this file
+            FilenamePass++; // Fake Pass because file is ignored
+            FileDataPass++;
+          } else { // Else user want to select another file
+            SelectFilePass=0;
+
+            FileI=InputFileList.length; // end the loops
+          }
+
+        } else { // filename and data pass
+          SelectedInputFileList=Append(SelectedInputFileList,InputFileList[FileI]);
+
+        }
+      }// end for FileI loop
+      if (SelectedInputFileList.length>0){
+        SelectFilePass=1;
+        InputFileList=SelectedInputFileList;
+      }
+    } // end of file has correct header
+  } // end of file has correct extension
+}// end of function select file
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Macro starts here
 // Initial Message
@@ -336,195 +525,11 @@ do{
   SelectInputDir(MinNbFile,FileExt);
 }while(SelectInputDirPass!=1)
 
-
-
-
-///////////////////////////// Look for TXT File
-ParentDirList=getFileList(ParentDir);
-NbPotentialTXT=0;
-for(N=0;N<ParentDirList.length;N++){
-  ItemN=ParentDirList[N];
-  if(matches(ItemN, InputDirName+"_ROI and Threshold Values/?_?[0-9]*/?")){
-    NbPotentialTXT++;
-    ItemNumber=N;
-  }
-}
-
-////////// If only one ROI and Threshold Value folder is present pick the TXT file in it
-if(NbPotentialTXT==1){
-  TXTFilePath=ParentDir+ParentDirList[ItemNumber]+"ROI and Threshold Values.txt";
-} else if(NbPotentialTXT!=1){
-  TXTFilePath=File.openDialog("Select the TXT File containing ROI Coordinates and Threshold Values");
-}
-
-
-// Criteria to check TXT file
-RequiredHeaderPass=0;
-RequiredFilePass=0;
 RequiredHeaderList=newArray("Filename", "ROIPosX", "ROIPosY", "ROIWidth","ROIHeight", "ThresholdLowerValue","ThresholdUpperValue");
-RequiredFileList=InputFileList;
-
-// Check TXT file integrity
-while((endsWith(toLowerCase(TXTFilePath), ".txt")!=1) || (RequiredHeaderPass!=RequiredHeaderList.length) || (RequiredFilePass!=RequiredFileList.length)){
-  // if it is not a TXT
-  if(endsWith(toLowerCase(TXTFilePath), ".txt")!=1){
-
-    MessageError="Sorry but the file:\n\"" +File.getName(TXTFilePath)+"\"\nis not a TXT file.";
-    MessageFix="The function \""+MacroName+"\" requires a TXT file providing the ROI coordinates and threshold values.";
-    ErrorResponseArray=newArray("Select Another TXT File", "Cancel and Close");
-    MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+File.getName(TXTFilePath)+"\"\nwas not a TXT file.";
-    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-      CleanExit(MessageQuit);
-    } else { // Else user want to select another file
-      RequiredFilePass=0;
-    }
-
-  } else if(endsWith(toLowerCase(TXTFilePath), ".txt")==1){ // if it ends by TXT then
-    // Evaluate the header
-    open(TXTFilePath);
-    TXTFileHeadingArray=split(String.getResultsHeadings);
-    if(isOpen("Results")){
-      run("Clear Results");
-      selectWindow("Results");
-      run("Close");
-    }
-
-    RequiredHeaderPass=0;
-    // Transform the Header Array into a string
-    CSVFileHeadingString="";
-    for (n=0; n<CSVFileHeadingArray.length; n++){
-      CSVFileHeadingString=CSVFileHeadingString+"\n"+CSVFileHeadingArray[n];
-    }
-
-
-    for (ItemI=0; ItemI<RequiredHeaderList.length; ItemI++){ // Screen the RequiredItem List
-      if(indexOf(CSVFileHeadingString , RequiredHeaderList[ItemI])>0){ // if RequiredItem is Present in the ItemList
-        RequiredHeaderPass++;
-      } // end of If present increment
-    } // end of for
-
-    // If header is not good
-    if(RequiredHeaderPass!=RequiredHeaderList.length){
-      Dialog.create(PluginName+" Information");
-      Dialog.setInsets(0, 0, 0);
-      Dialog.addMessage("Sorry but \""+File.getName(CSVFilePath)+"\" does not contain the required columns.");
-      for (n=0;n<RequiredHeaderList.length;n++){
-        if(n==0){
-          RequiredMessageHeader=RequiredHeaderList[n];;
-        } else if (n>0){
-          RequiredMessageHeader=RequiredMessageHeader+", "+RequiredHeaderList[n];
-        }
-      }
-      Dialog.setInsets(0, 0, 0);
-      Dialog.addMessage("The required columns are:\n"+RequiredMessageHeader+".");
-      TryAgainCancelCloseArray=newArray("Try again", "Cancel and Close");
-      Dialog.setInsets(5, 150, 0);
-      Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
-      Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-      // Display the Dialog and get user choice
-      Dialog.show();
-      UserChoice = Dialog.getRadioButton();
-      if (UserChoice=="Cancel and Close"){
-        exit(PluginName+" "+MacroName+" stopped because " +File.getName(CSVFilePath)+" did not contain the required columns.");
-      }
-    }  // end of prompt if header is not good
-
-    // if it is a CSV and the header is correct check that all files have values
-    if(RequiredHeaderPass==RequiredHeaderList.length){
-      // Create an array of the FileName from the CSV file
-      open(CSVFilePath);
-      FileNameArray = newArray(nResults);
-      for (n=0;n<nResults;n++){
-        FileNameArray[n] = getResultString("Filename", n);
-      } // end of populating the array
-      if(isOpen("Results")){
-        run("Clear Results");
-        selectWindow("Results");
-        run("Close");
-      }
-
-
-
-      RequiredFilePass=0;
-      FileNameString="";
-      for (n=0; n<FileNameArray.length; n++){
-        FileNameString=FileNameString+"\n"+FileNameArray[n];
-      }
-      for (ItemI=0; ItemI<RequiredFileList.length; ItemI++){ // Screen the RequiredItem List
-        BasenameIArray=split(RequiredFileList[ItemI],".");
-        if(indexOf(FileNameString , BasenameIArray[0])>0){ // if RequiredItem is Present in the ItemList
-          RequiredFilePass++;
-        } // end of If present increment
-      } // end of for
-
-      // If some input file do not have data in the CSV
-      if(RequiredFilePass!=RequiredFileList.length){
-
-        Dialog.create(PluginName+" Information");
-        Dialog.setInsets(0, 0, 0);
-        Dialog.addMessage("Sorry but \""+File.getName(CSVFilePath)+"\" does not contain values for all the selected "+FileExt+" Files.");
-        TryAgainCancelCloseArray=newArßray("Try again", "Cancel and Close");
-        Dialog.setInsets(5, 150, 0);
-        Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
-        Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-        // Display the Dialog and get user choice
-        Dialog.show();
-        UserChoice = Dialog.getRadioButton();
-        if (UserChoice=="Cancel and Close"){
-          exit(PluginName+" "+MacroName+" stopped because \"" +File.getName(CSVFilePath)+"\" did not contain values for all the selected "+FileExt" Files.");
-        }
-      } else if (RequiredFilePass==RequiredFileList.length){ // if it passes all requirements
-        UserChoice=""; // do not prompt
-      } // End if values for processing all input files are not present
-    } // End of If Header is correct
-  } // End of if it is CSV
-
-  // If file not correct prompt to select a new CSV file
-  if (UserChoice=="Try again"){
-    CSVFilePath=File.openDialog("Select the CSV File containing ROI Coordinates and Threshold Values");
-    RequiredHeaderPass=0;
-    RequiredFilePass=0;
-  }
-} // End of While loop checking for CSV file integrity
-////////// End of If ROI and Threshold Value folder is ambiguous
-
-
-*/
-////////////////////////////// Read the CSV File
-open(CSVFilePath);
-CellSeparator= "\t";
-LineSeparator="\n";
-
-FileNameArray = newArray(nResults);
-ROIPosXArray = newArray(nResults);
-ROIPosYArray = newArray(nResults);
-ROIWidthArray = newArray(nResults);
-ROIHeightArray = newArray(nResults);
-ThresholdLowerValueArray = newArray(nResults);
-ThresholdUpperValueArray = newArray(nResults);
-// Populate the Array with the results
-for (n=0;n<nResults;n++){
-  FileNameArray[n] = getResultString("Filename", n);
-  ROIPosXArray[n] = getResult("ROIPosX",n);
-  ROIPosYArray[n] = getResult("ROIPosY",n);
-  ROIWidthArray[n] = getResult("ROIWidth",n);
-  ROIHeightArray[n] = getResult("ROIHeight",n);
-  ThresholdLowerValueArray[n] = getResult("LowerValue",n);
-  ThresholdUpperValueArray[n] = getResult("UpperValue",n);
-}// end of populating the arrays
-
-
-// Close results windows if it is open
-if(isOpen("Results")){
-  run("Clear Results");
-  selectWindow("Results");
-  run("Close");
-}//end of if Results is open
-////////////////////////////// End of Read the CSV File
-
-
-
+do{
+SelectFile("ROI and Threshold Values","ROI and Threshold Values", "TXT", RequiredHeaderList );
+//Arguments for the function SelectFile(FolderSuffix, FileName, FileExt, FileHeaderList){
+}while(SelectFilePass!=1)
 
 // Create Unique Output directory
 CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
@@ -534,7 +539,10 @@ CreateOutputSubDir(SubDirArray);
 OutputImageCroppedPath=""+OutputDirPath+"Cropped"+File.separator;
 OutputImageThresholdedPath=""+OutputDirPath+"Thresholded"+File.separator;
 
-
+call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+waitForUser(PluginName+" Information", "The function \""+MacroName+"\" will now process your file(s).\n"
++"This process can be long.\nPlease be patient. You will be informed when it is completed."
++"\nTo start the process, press OK.");
 
 
 
