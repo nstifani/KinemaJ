@@ -1,5 +1,5 @@
 // Function written by Nicolas Stifani nstifani@gmail.com for more info
-
+ 
 // Defines Global Variables
 requires("1.51n");
 var PluginName="KinemaJ";
@@ -574,7 +574,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     // Measure the rectangular selection Dimension
     // Leave Y coordinates inverted
     run("Set Measurements...", "area mean standard modal min centroid center perimeter bounding fit shape feret's integrated median skewness kurtosis area_fraction stack display redirect=None decimal=9");
-    List.setMeasurements; 
+    List.setMeasurements;
     PosX=List.getValue("BX");
     PosY=List.getValue("BY");
     Width=List.getValue("Width");

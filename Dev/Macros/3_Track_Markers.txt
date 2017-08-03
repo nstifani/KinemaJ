@@ -493,7 +493,7 @@ n++;
 
 
 
-//Macros starts here
+//////////////////////////////////////////////// Macro starts here
 // Intial Message
 InitialMessage="The function \""+MacroName+"\" will:"
 +"\n - Prompt to select a \"Cropped and Thresholded\" folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process"
@@ -510,25 +510,20 @@ do{
 SelectMasterInputDir(MinNbFile,FileExt,RequiredSubfolderArray);
 }while(MasterInputDirPass!=1)
 
-
-
-var OutputDirPath;
-var OutputDirName;
 // Create OutputDirectory with the Folder suffix
 InputDirName=replace(MasterInputDirName,"_Cropped and Thresholded_?[0-9]*","");
 CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
 
-// // Create Output Subdirectory and create general variables for each SubdirectoryOuputdir Path
-var SubDirArray=newArray("Tables","Labels","Cleaned","Parameters");
+// Create Output Subdirectory and create general variables for each SubdirectoryOuputdir Path
 CreateOutputSubDir(SubDirArray);
-// //////////////////////////// End of Create an unique output directory
+
 OutputDirPathTables=""+OutputDirPath+"Tables"+File.separator;
 OutputDirPathLabels=""+OutputDirPath+"Labels"+File.separator;
 OutputDirPathCleaned=""+OutputDirPath+"Cleaned"+File.separator;
 OutputDirPathParameters=""+OutputDirPath+"Parameters"+File.separator;
 
 
-//////////////////////////Process each file
+//////////////////////////////////////////////// Process each File
 for (FileI = 0; FileI < InputFileList.length; FileI++){
 setBatchMode(true);
 InputFileNameI = InputFileList[FileI];
@@ -550,8 +545,7 @@ close();
 /////////////////////// Get automatic tracking parameters
 run("Duplicate...", "title=FirstFrame duplicate range=1-1");
 selectWindow("FirstFrame");
-run("Set Measurements...", "area bounding redirect=None decimal=3");
-run("Analyze Particles...", "size=1-Infinity show=Nothing display clear");
+run("Analyze Particles...", "size=1-Infinity show=Nothing clear");
 selectWindow("FirstFrame");
 close();
 
@@ -577,11 +571,7 @@ selectWindow(InputFileNameI);
 getDimensions(ImageWidth, ImageHeight, NBchannels, NBFrames, NBStacks);
 MinTrackLength=floor(NBFrames/9); // why 9? Because ImageJ jump by 10% when clicking on the stack scroll bar
 
-if(isOpen("Results")){
-run("Clear Results");
-selectWindow("Results");
-run("Close");
-}
+if(isOpen("Results")){run("Clear Results");selectWindow("Results");run("Close");}
 } else if (!(nResults>0)){ // else if there is no results prompt the user to select manually the parameters
 DialogPass=0;
 while(DialogPass!=1){
