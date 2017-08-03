@@ -30,10 +30,10 @@ run("Calibrate Videos");
 
 <line>
 <button>1 line 2
-label=2 Pre-Process Videos
+label=2 Preprocess Videos
 icon=noicon
 arg=<macro>
-run("Pre-process Videos");
+run("Preprocess Videos");
 </macro>
 </line>
 

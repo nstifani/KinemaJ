@@ -518,7 +518,6 @@ function CloseUtilityWindows(ListUtilityWindows){
         }
       } else { // required hearer is passed
         FileHeaderPass=1;
-
         run("Results... ", "open=&FilePath");
         // Create arrays
         FileNameArray = newArray(0);
@@ -619,7 +618,7 @@ function CloseUtilityWindows(ListUtilityWindows){
   +"\n - Prompt to select a TXT file containing ROI Coordinates and Threshold Values"
   +"\n\nFor each "+FileExt+" file:"
   +"\n - Cropped Videos with the values found in the TXT file"
-  +"\n - Cropped amd Threshold Videos with the values found in the TXT file"
+  +"\n - Cropped and Threshold Videos with the values found in the TXT file"
   +"\n - Save Videos as TIF files";
 
   MessageDialog(InitialMessage); // Display the Initial Message
@@ -659,7 +658,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     BasenameArray=split(InputFileNameI,".");
     InputFileNameINoExt=BasenameArray[0];
     InputFilePathI = InputDirPath+InputFileNameI;
-    run("AVI...", "select=&InputFilePathI convert");
+    run("AVI...", "select=&InputFilePathI use convert");
 
     //Look for the matching filename in the arrays and get the values
     RowI=0;

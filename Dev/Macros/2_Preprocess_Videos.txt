@@ -3,10 +3,10 @@
 // Defines Global Variables
 requires("1.51n");
 var PluginName="KinemaJ";
-var MacroName="Pre-process Videos";
+var MacroName="Preprocess Videos";
 var FileExt="AVI";
 var MinNbFile=1;
-var FolderSuffix="Cropped and Thresholded";
+var FolderSuffix="Preprocessed";
 var SubDirArray=newArray("Cropped", "Thresholded");
 CellSeparator= "\t";
 LineSeparator="\n";
@@ -447,7 +447,8 @@ function CloseUtilityWindows(ListUtilityWindows){
   +"\n - Prompt to adjust the threshold values"
   +"\n - Prompt to select the region of interest"
   +"\n - Cropped Videos"
-  +"\n - Cropped and Threshold Videos";
+  +"\n - Cropped and Threshold Videos"
+  +"\n - Save Videos as TIF files";
 
   MessageDialog(InitialMessage); // Display the Initial Message
 
@@ -649,7 +650,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     ThresholdUpperValue = ThresholdUpperValueArray[RowI];
 
     // Open avi File
-    run("AVI...", "select=&InputFilePathI convert");
+    run("AVI...", "select=&InputFilePathI use convert");
 
     makeRectangle(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
     run("Crop");

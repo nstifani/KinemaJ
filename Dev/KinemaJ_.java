@@ -35,7 +35,7 @@ public class KinemaJ_ implements PlugIn {
     IJ.runMacro(getText(path+"1_Calibrate_Videos.txt"), "");
   }
   void Preprocess() {
-    IJ.runMacro(getText(path+"2_Pre-process_Videos.txt"), "");
+    IJ.runMacro(getText(path+"2_Preprocess_Videos.txt"), "");
   }
   void GetROIandThreshold() {
     IJ.runMacro(getText(path+"2a_Get_ROI_and_Threshold_Values.txt"), "");
