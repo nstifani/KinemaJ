@@ -494,10 +494,9 @@ function CloseUtilityWindows(ListUtilityWindows){
   do{
     SelectMasterInputDir(RequiredSubfolderArray, MinNbFile, FileExt);
   }while(MasterInputDirPass!=1)
-
   // Create OutputDirectory with the Folder suffix
-  if(endsWith(MasterInputDirName,"_Preproccessed_?[0-9]*")){
-    InputDirName=replace(MasterInputDirName,"_Preproccessed_?[0-9]*","");
+  if(matches(MasterInputDirName,".*_Preprocessed_?[0-9]*")){
+    InputDirName=replace(MasterInputDirName,"_Preprocessed_?[0-9]*","");
   } else {
     InputDirName=MasterInputDirName;
   }
