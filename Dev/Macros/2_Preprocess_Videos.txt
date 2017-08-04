@@ -112,12 +112,12 @@ function Append(ArrayI, Value) {
 var MessageDialogPass;
 function MessageDialog(Message){
   MessageDialogPass=0;
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(Message);
-  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   CloseUtilityWindows(ListUtilityWindows);
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0,0,0);
+  Dialog.addMessage(Message);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   MessageDialogPass=1;
 }
@@ -128,17 +128,16 @@ var ErrorDialogPass;
 var UserResponseErrorDialog;
 function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
   ErrorDialogPass=0;
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(MessageError);
-  Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(MessageFix);
-  Dialog.setInsets(0, 0, 0);
-  Dialog.setInsets(0, 20, 0);
-  Dialog.addRadioButtonGroup("", ErrorResponseArray, ErrorResponseArray.length, 1, ErrorResponseArray[0]);
-  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   CloseUtilityWindows(ListUtilityWindows);
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0,0,0);
+  Dialog.addMessage(MessageError);
+  Dialog.setInsets(0,0,0);
+  Dialog.addMessage(MessageFix);
+  Dialog.setInsets(0,50,0);
+  Dialog.addRadioButtonGroup("", ErrorResponseArray, ErrorResponseArray.length, 1, ErrorResponseArray[0]);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   UserResponseErrorDialog=Dialog.getRadioButton();
   return UserResponseErrorDialog;
@@ -146,90 +145,69 @@ function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
 /////////////////////////// Function to display an error and propose to options
 
 /////////////////////////// Function to select an Input Directory
-// containing at least MinNbFile with the correct File Extension FileExt
+// containing at least MinNbFile with the correct file Extension FileExt
 // This function also prevents from having files with more than one . in their filenames
 var SelectInputDirPass; // Switch for the dialog box
 var InputDirPath; // Path of the input directory
 var ParentDir; // ParentDirectory of the selected input directory
 var InputDirName; // Name of the Input Directory
-var NbFileWithCorrectExt; // Nb of File with the correct extension in the input directory
-var InputItemList; // List of Files and folders in the input directory (all files no matter the extension)
-var InputCorrectExtFileList; // List of files with the correct extension
 var InputFileList;
 var NbFile;
 
 function SelectInputDir(MinNbFile, FileExt){
-  // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
-  // FileExt This is the File extension as a string example "tif"
-  InputDirPath=getDirectory("Select a FOLDER containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a Folder
+  // MinNbFile This is the minimum Nb of file to be present in the list to be accepted
+  // FileExt This is the file extension as a string example "tif"
+  InputDirPath=getDirectory("Select a folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a folder
   InputItemList=getFileList(InputDirPath); // List of Item in the selected folder
   ParentDir=File.getParent(InputDirPath)+File.separator;
   InputDirName=File.getName(InputDirPath);
 
   SelectInputDirPass=0; // Switch for the Function
-  NbFileWithCorrectExt=0; // Count of Nb of Files
-  BaseNameError=0; // Switch to make sure there is only one "." in the filename
-  InputCorrectExtFileList=newArray(0);
+  InputFileList=newArray(0);
   UserResponseErrorDialog="";
 
-  // Evaluate the Nb of File with correct extension and add them to InputCorrectExtFileList
+  // Evaluate the Nb of file with correct extension and add them to InputCorrectExtFileList
   for (ItemI=0; ItemI<InputItemList.length; ItemI++){
     if(endsWith(toLowerCase(InputItemList[ItemI]), "."+toLowerCase(FileExt))){ // Select files with correct extension
-      InputCorrectExtFileList=Append(InputCorrectExtFileList, InputItemList[ItemI]);
-    }
-  }
-  NbFileWithCorrectExt=InputCorrectExtFileList.length;
-  if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
-    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
-    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
-    ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
-    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-      CleanExit(MessageQuit);
-    } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
-      SelectInputDirPass=0;
-    }
-  } else { // if NbFileWithCorrectExt is above or equal MinNbFile Evaluate Filenames
-    InputFileList=newArray(0);
-    for (FileI=0; FileI<InputCorrectExtFileList.length; FileI++){
-      BasenameFileIArray=split(InputCorrectExtFileList[FileI],"."); // Make an array from the filename
+      // If file has the correct extension check the BaseName
+      BasenameFileIArray=split(InputItemList[ItemI],"."); // Make an array from the filename
       if(BasenameFileIArray.length!=2){ // if there is more than one . in the file name abort
-        MessageError="Sorry but the "+FileExt+" file:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
+        MessageError="Sorry but the "+FileExt+" file:\n\""+InputItemList[ItemI]+"\"\ncontains more than one \".\" in its filename.";
         MessageFix="The function \""+MacroName+"\" does NOT allow filenames with more than one unique \".\" used for the file extension.";
-        ErrorResponseArray=newArray("Select Another Folder", "Ignore This File", "Cancel and Close");
-        MessageQuit="The function \""+ MacroName+"\" stopped because the file\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
+        ErrorResponseArray=newArray("Ignore This File", "Select Another Folder", "Cancel and Close");
+        MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+InputItemList[ItemI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
         UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
         if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
           CleanExit(MessageQuit);
         } else if (UserResponseErrorDialog=="Ignore This File"){
           // Ignore
         } else if (UserResponseErrorDialog=="Select Another Folder") {
-          FileI=InputCorrectExtFileList.length;
+          ItemI=InputItemList.length;
           SelectInputDirPass=0;
         }
-      }else { // If basename is good add it to the InputFileList
-        InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
+      } else { // If basename is good add it to the InputFileList
+        InputFileList=Append(InputFileList, InputItemList[ItemI]);
       }
-    }
-    // Make sure InpuFileList is > MinNbFile
-    NbFile=InputFileList.length;
-    if(NbFile<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
-      MessageError="Sorry but the Folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" File with no more than one \".\" in its filename.";
-      MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" File with one unique \".\" used for the file extension.";
-      ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-      MessageQuit="The function \""+ MacroName+"\" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File no more than one \".\" in its filename.";
-      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-      if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-        CleanExit(MessageQuit);
-      } else {
-        SelectInputDirPass=0;
-      }
-    } else if (UserResponseErrorDialog=="Select Another Folder"){
-      SelectInputDirPass=0; // InputDir Pass the criteria
+    } // End of if fileExt is correct
+  } // End of for ItemI
+
+  // Make sure InpuFileList is > MinNbFile
+  NbFile=InputFileList.length;
+  if(InputFileList.length<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of file with correct extension is not at least equal to the MinNbFile Create Error Message.
+    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
+    ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\""+InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+      CleanExit(MessageQuit);
     } else {
-      SelectInputDirPass=1; // InputDir Pass the criteria
+      SelectInputDirPass=0;
     }
+  } else if (UserResponseErrorDialog=="Select Another Folder"){
+    SelectInputDirPass=0; // InputDir Pass the criteria
+  } else {
+    SelectInputDirPass=1; // InputDir Pass the criteria
   }
 }
 /////////////////////////// Function to select an Input Directory
@@ -237,7 +215,7 @@ function SelectInputDir(MinNbFile, FileExt){
 /////////////////////////// Function to create a new output directory
 var OutputDirPath; // The path of the output directory
 var OutputDirName; // The name of the output directory
-function CreateOutputDir(ParentDir, InputDirName, FolderSuffix){ // Folder suffix is a string appended to the input Directory
+function CreateOutputDir(ParentDir, InputDirName, FolderSuffix){ // folder suffix is a string appended to the input Directory
   OutputDirPath=ParentDir+InputDirName+"_"+FolderSuffix+File.separator; // Create the outputdirpath
   n=1;
   while(File.exists(OutputDirPath)!=0){ // If the path already exist, increment with _ n until it does not exist
@@ -258,7 +236,7 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 } // End of CreateOutputSubDir function
 // NOTE:It is useful to create a string for the subdirectory paths
 // For each element in the subdirarray addMessage
-// Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+File.separator;
+// Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+file.separator;
 // Then you can use directly the string to save within a subdirectory
 /////////////////////////// Function to create subfolders within the newly create outputdirectory
 
@@ -271,11 +249,10 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   beep();
   // Closing Dialog Box
   Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0,0,0);
   Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
-  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0,0,0);
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
-  Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
 }
@@ -289,9 +266,8 @@ function CleanExit(MessageQuit){
   CloseUtilityWindows(ListUtilityWindows);
   beep();
   Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0,0,0);
   Dialog.addMessage(MessageQuit);
-  Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   exit();
@@ -311,6 +287,13 @@ function CloseUtilityWindows(ListUtilityWindows){
   }
   /////////////////////////// Close UtilityWindows
   //////////////////////////////////////////////// End of General Functions
+
+
+
+
+
+
+
 
 
 
@@ -365,7 +348,6 @@ function CloseUtilityWindows(ListUtilityWindows){
       setBatchMode("show");
       selectWindow(CurrentImageName);
       setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
-
       MessageError="A "+SelectionTypeName+" selection was detected.";
       MessageFix="What would you like to do?";
       ErrorResponseArray=newArray("Keep the current "+SelectionTypeName+" selection", "Adjust the current "+SelectionTypeName+" selection", "Discard the current "+SelectionTypeName+" selection", "Cancel and Close");
@@ -382,12 +364,10 @@ function CloseUtilityWindows(ListUtilityWindows){
       }else if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]) {
         CleanExit(MessageQuit);
       }
-
     } else { // Else the current selection does not match the expected selection
       SelectionPromptPass=0;
       run("Select None");
     }
-
     if(SelectionPromptPass==0){ // If the selection is not set prompt or does not correspond to the expected selection
       setBatchMode("show");
       selectWindow(CurrentImageName);
@@ -418,7 +398,6 @@ function CloseUtilityWindows(ListUtilityWindows){
           MessageQuit="The function \""+ MacroName+"\" stopped because the provided selection was not a "+SelectionTypeName+".";
         }
         setBatchMode("show");
-
         // Close results windows if it is open
         if(isOpen("Results")){run("Clear Results"); selectWindow("Results"); run("Close");} //end of if Results is open
         UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
@@ -439,11 +418,41 @@ function CloseUtilityWindows(ListUtilityWindows){
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   //////////////////////////////////////////////// Macro starts here
   // Initial Message
   InitialMessage="The function \""+MacroName+"\" will:"
   +"\n - Prompt to select a folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process"
-  +"\n\nFor each "+FileExt+" file:"
+  +"\n "
+  +"\nFor each "+FileExt+" file:"
   +"\n - Prompt to adjust the threshold values"
   +"\n - Prompt to select the region of interest"
   +"\n - Cropped Videos"
@@ -465,7 +474,7 @@ function CloseUtilityWindows(ListUtilityWindows){
   OutputImageCroppedPath=""+OutputDirPath+"Cropped"+File.separator;
   OutputImageThresholdedPath=""+OutputDirPath+"Thresholded"+File.separator;
 
-  // Create an Result TXT File
+  // Create an Result TXT file
   TXTFileName="ROI and Threshold Values";
   TXTFilePath=OutputDirPath+TXTFileName+".txt";
   TXTFile = File.open(TXTFilePath);
@@ -484,13 +493,13 @@ function CloseUtilityWindows(ListUtilityWindows){
 
 
 
-  //////////////////////////////////////////////// Process each File Part 1
+  //////////////////////////////////////////////// Process each file Part 1
   // Get Threshold Values and Crop Dimension for each file
   for (FileI = 0; FileI < InputFileList.length; FileI++){
-    //  setBatchMode(true);
+    setBatchMode(true);
     InputFileNameI=InputFileList[FileI];
-    BasenameArray=split(InputFileNameI,".");
-    InputFileNameINoExt=BasenameArray[0];
+    BasenameArrayFileI=split(InputFileNameI,".");
+    InputFileNameINoExt=BasenameArrayFileI[0];
     InputFilePathI = InputDirPath+InputFileNameI;
     // open(InputFilePathI);
     run("AVI...", "select=&InputFilePathI use convert"); // Open as AVI use virtual memory and convert to gray scale
@@ -500,7 +509,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     // Get Threshold values
     setBatchMode("show");
     selectWindow(InputFileNameI);
-    setLocation(IJPosX,IJPosY+IJSizeY+Spacer,IJSizeX, screenHeight*0.5);
+    setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
     setAutoThreshold("Minimum dark");
     run("Threshold...");
 
@@ -589,7 +598,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     // Update the Selection
     getSelectionBounds(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
 
-    // Add selection to overlay and save the File
+    // Add selection to overlay and save the file
     selectWindow(InputFileNameI);
     close();
 
@@ -609,7 +618,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     showProgress(FileI, InputFileList.length);
     call("java.lang.System.gc"); // Run garbage collector
   }
-  //////////////////////////////////////////////// Process each File Part 1
+  //////////////////////////////////////////////// Process each file Part 1
 
 
 
@@ -627,7 +636,7 @@ function CloseUtilityWindows(ListUtilityWindows){
 
 
 
-  //////////////////////////////////////////////// Process each File Part 2
+  //////////////////////////////////////////////// Process each file Part 2
   // Crop and Threshold files
   setBatchMode(true);
   for (FileI = 0; FileI < InputFileList.length; FileI++){
@@ -649,7 +658,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     ThresholdLowerValue = ThresholdLowerValueArray[RowI];
     ThresholdUpperValue = ThresholdUpperValueArray[RowI];
 
-    // Open avi File
+    // Open avi file
     run("AVI...", "select=&InputFilePathI use convert");
 
     makeRectangle(ROIPosX, ROIPosY, ROIWidth, ROIHeight);
@@ -666,7 +675,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     showProgress(FileI, InputFileList.length);
     call("java.lang.System.gc"); // Run garbage collector
   }
-  //////////////////////////////////////////////// Process each File Part 2
+  //////////////////////////////////////////////// Process each file Part 2
 
 
 

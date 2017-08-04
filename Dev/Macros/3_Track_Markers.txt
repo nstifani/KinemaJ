@@ -112,12 +112,12 @@ function Append(ArrayI, Value) {
 var MessageDialogPass;
 function MessageDialog(Message){
   MessageDialogPass=0;
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(Message);
-  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   CloseUtilityWindows(ListUtilityWindows);
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0,0,0);
+  Dialog.addMessage(Message);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   MessageDialogPass=1;
 }
@@ -128,17 +128,16 @@ var ErrorDialogPass;
 var UserResponseErrorDialog;
 function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
   ErrorDialogPass=0;
-  Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(MessageError);
-  Dialog.setInsets(0, 0, 0);
-  Dialog.addMessage(MessageFix);
-  Dialog.setInsets(0, 0, 0);
-  Dialog.setInsets(0, 20, 0);
-  Dialog.addRadioButtonGroup("", ErrorResponseArray, ErrorResponseArray.length, 1, ErrorResponseArray[0]);
-  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
   CloseUtilityWindows(ListUtilityWindows);
+  Dialog.create(PluginName+" Information");
+  Dialog.setInsets(0,0,0);
+  Dialog.addMessage(MessageError);
+  Dialog.setInsets(0,0,0);
+  Dialog.addMessage(MessageFix);
+  Dialog.setInsets(0,50,0);
+  Dialog.addRadioButtonGroup("", ErrorResponseArray, ErrorResponseArray.length, 1, ErrorResponseArray[0]);
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   UserResponseErrorDialog=Dialog.getRadioButton();
   return UserResponseErrorDialog;
@@ -146,90 +145,69 @@ function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
 /////////////////////////// Function to display an error and propose to options
 
 /////////////////////////// Function to select an Input Directory
-// containing at least MinNbFile with the correct File Extension FileExt
+// containing at least MinNbFile with the correct file Extension FileExt
 // This function also prevents from having files with more than one . in their filenames
 var SelectInputDirPass; // Switch for the dialog box
 var InputDirPath; // Path of the input directory
 var ParentDir; // ParentDirectory of the selected input directory
 var InputDirName; // Name of the Input Directory
-var NbFileWithCorrectExt; // Nb of File with the correct extension in the input directory
-var InputItemList; // List of Files and folders in the input directory (all files no matter the extension)
-var InputCorrectExtFileList; // List of files with the correct extension
 var InputFileList;
 var NbFile;
 
 function SelectInputDir(MinNbFile, FileExt){
-  // MinNbFile This is the minimum Nb of File to be present in the list to be accepted
-  // FileExt This is the File extension as a string example "tif"
-  InputDirPath=getDirectory("Select a FOLDER containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a Folder
+  // MinNbFile This is the minimum Nb of file to be present in the list to be accepted
+  // FileExt This is the file extension as a string example "tif"
+  InputDirPath=getDirectory("Select a folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a folder
   InputItemList=getFileList(InputDirPath); // List of Item in the selected folder
   ParentDir=File.getParent(InputDirPath)+File.separator;
   InputDirName=File.getName(InputDirPath);
 
   SelectInputDirPass=0; // Switch for the Function
-  NbFileWithCorrectExt=0; // Count of Nb of Files
-  BaseNameError=0; // Switch to make sure there is only one "." in the filename
-  InputCorrectExtFileList=newArray(0);
+  InputFileList=newArray(0);
   UserResponseErrorDialog="";
 
-  // Evaluate the Nb of File with correct extension and add them to InputCorrectExtFileList
+  // Evaluate the Nb of file with correct extension and add them to InputCorrectExtFileList
   for (ItemI=0; ItemI<InputItemList.length; ItemI++){
     if(endsWith(toLowerCase(InputItemList[ItemI]), "."+toLowerCase(FileExt))){ // Select files with correct extension
-      InputCorrectExtFileList=Append(InputCorrectExtFileList, InputItemList[ItemI]);
-    }
-  }
-  NbFileWithCorrectExt=InputCorrectExtFileList.length;
-  if(NbFileWithCorrectExt<MinNbFile){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
-    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
-    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
-    ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
-    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-      CleanExit(MessageQuit);
-    } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
-      SelectInputDirPass=0;
-    }
-  } else { // if NbFileWithCorrectExt is above or equal MinNbFile Evaluate Filenames
-    InputFileList=newArray(0);
-    for (FileI=0; FileI<InputCorrectExtFileList.length; FileI++){
-      BasenameFileIArray=split(InputCorrectExtFileList[FileI],"."); // Make an array from the filename
+      // If file has the correct extension check the BaseName
+      BasenameFileIArray=split(InputItemList[ItemI],"."); // Make an array from the filename
       if(BasenameFileIArray.length!=2){ // if there is more than one . in the file name abort
-        MessageError="Sorry but the "+FileExt+" file:\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\" in its filename.";
+        MessageError="Sorry but the "+FileExt+" file:\n\""+InputItemList[ItemI]+"\"\ncontains more than one \".\" in its filename.";
         MessageFix="The function \""+MacroName+"\" does NOT allow filenames with more than one unique \".\" used for the file extension.";
-        ErrorResponseArray=newArray("Select Another Folder", "Ignore This File", "Cancel and Close");
-        MessageQuit="The function \""+ MacroName+"\" stopped because the file\n\""+InputCorrectExtFileList[FileI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
+        ErrorResponseArray=newArray("Ignore This File", "Select Another Folder", "Cancel and Close");
+        MessageQuit="The function \""+ MacroName+"\" stopped because the file:\n\""+InputItemList[ItemI]+"\"\ncontains more than one \".\"\nMake sure filenames have no more than one unique \".\" for the file extension.";
         UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
         if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
           CleanExit(MessageQuit);
         } else if (UserResponseErrorDialog=="Ignore This File"){
           // Ignore
         } else if (UserResponseErrorDialog=="Select Another Folder") {
-          FileI=InputCorrectExtFileList.length;
+          ItemI=InputItemList.length;
           SelectInputDirPass=0;
         }
-      }else { // If basename is good add it to the InputFileList
-        InputFileList=Append(InputFileList, InputCorrectExtFileList[FileI]);
+      } else { // If basename is good add it to the InputFileList
+        InputFileList=Append(InputFileList, InputItemList[ItemI]);
       }
-    }
-    // Make sure InpuFileList is > MinNbFile
-    NbFile=InputFileList.length;
-    if(NbFile<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of File with correct extension is not at least equal to the MinNbFile Create Error Message.
-      MessageError="Sorry but the Folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" File with no more than one \".\" in its filename.";
-      MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" File with one unique \".\" used for the file extension.";
-      ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-      MessageQuit="The function \""+ MacroName+"\" stopped because the Folder:\n\"" +InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" File no more than one \".\" in its filename.";
-      UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-      if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-        CleanExit(MessageQuit);
-      } else {
-        SelectInputDirPass=0;
-      }
-    } else if (UserResponseErrorDialog=="Select Another Folder"){
-      SelectInputDirPass=0; // InputDir Pass the criteria
+    } // End of if fileExt is correct
+  } // End of for ItemI
+
+  // Make sure InpuFileList is > MinNbFile
+  NbFile=InputFileList.length;
+  if(InputFileList.length<MinNbFile && UserResponseErrorDialog!="Select Another Folder"){ // If the Nb of file with correct extension is not at least equal to the MinNbFile Create Error Message.
+    MessageError="Sorry but the folder:\n\"" +InputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    MessageFix="The function \""+MacroName+"\" requires a folder that contains at least "+MinNbFile+" "+FileExt+" file(s).";
+    ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+    MessageQuit="The function \""+ MacroName+"\" stopped because the folder:\n\""+InputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+    UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+    if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+      CleanExit(MessageQuit);
     } else {
-      SelectInputDirPass=1; // InputDir Pass the criteria
+      SelectInputDirPass=0;
     }
+  } else if (UserResponseErrorDialog=="Select Another Folder"){
+    SelectInputDirPass=0; // InputDir Pass the criteria
+  } else {
+    SelectInputDirPass=1; // InputDir Pass the criteria
   }
 }
 /////////////////////////// Function to select an Input Directory
@@ -258,7 +236,7 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 } // End of CreateOutputSubDir function
 // NOTE:It is useful to create a string for the subdirectory paths
 // For each element in the subdirarray addMessage
-// Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+File.separator;
+// Output[SubDirArrayElementN]Path=""+OutputDirPath+"[SubDirArrayElementN]"+file.separator;
 // Then you can use directly the string to save within a subdirectory
 /////////////////////////// Function to create subfolders within the newly create outputdirectory
 
@@ -271,11 +249,10 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
   beep();
   // Closing Dialog Box
   Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0,0,0);
   Dialog.addMessage(FileI+" of "+ NbFile+" "+ FileExt+ " file(s) in the folder:\n\""+InputDirName+"\"\nhave been processed successfully.");
-  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0,0,0);
   Dialog.addMessage("Files are saved in the following folder:\n\""+OutputDirName+"\".");
-  Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
 }
@@ -289,9 +266,8 @@ function CleanExit(MessageQuit){
   CloseUtilityWindows(ListUtilityWindows);
   beep();
   Dialog.create(PluginName+" Information");
-  Dialog.setInsets(0, 0, 0);
+  Dialog.setInsets(0,0,0);
   Dialog.addMessage(MessageQuit);
-  Dialog.setInsets(0, 0, 0);
   Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
   Dialog.show();
   exit();
@@ -313,6 +289,14 @@ function CloseUtilityWindows(ListUtilityWindows){
   //////////////////////////////////////////////// End of General Functions
 
 
+
+
+
+
+
+
+
+
   //////////////////////////////////////////////// Specific Functions
   /////////////////////////// SelectMasterDirectory
   // This function also prevents from having files with more than one . in their filenames
@@ -321,17 +305,17 @@ function CloseUtilityWindows(ListUtilityWindows){
   var ParentDir; // ParentDirectory of the selected input directory
   var MasterInputDirName; // Name of the Input Directory
   //var NbFileWithCorrectExt; // Nb of File with the correct extension in the input directory
-//  var MasterInputItemList; // List of Files and folders in the input directory (all files no matter the extension)
-//  var InputCorrectExtFileList; // List of files with the correct extension
+  //  var MasterInputItemList; // List of Files and folders in the input directory (all files no matter the extension)
+  //  var InputCorrectExtFileList; // List of files with the correct extension
   var InputFileList;
-//  var NbFile;
+  //  var NbFile;
   RequiredSubfolderArray=newArray("Cropped", "Thresholded");
   MinNbFile=1;
   FileExt="TIF";
   // Function to select a folder containing required subfolders each must contain minFile with the FileExt
   // Files should be present in both folders
   function SelectMasterInputDir(RequiredSubfolderArray, MinNbFile, FileExt){
-        // Prompt to select the folder
+    // Prompt to select the folder
     MasterInputDirPath=getDirectory("Select the folder containing the required subfolder(s)."); // Select a Folder
     MasterInputList=getFileList(MasterInputDirPath);
     ParentDir=File.getParent(MasterInputDirPath)+File.separator;
@@ -408,8 +392,51 @@ function CloseUtilityWindows(ListUtilityWindows){
         } else if(ThresholdedInputList.length<MinNbFile){
           FaultyFolder="Thresholded";
         }
-          MessageError="Sorry but the subfolder:\n\""+FaultyFolder+"\"\nin the folder:\n\""+MasterInputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
-          MessageFix="The function \""+MacroName+"\" requires the subfolder\n\""+FaultyFolder+"\"\ncontaining at least "+MinNbFile+" "+FileExt+" file(s).";
+        MessageError="Sorry but the subfolder:\n\""+FaultyFolder+"\"\nin the folder:\n\""+MasterInputDirName+"\"\ndoes not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+        MessageFix="The function \""+MacroName+"\" requires the subfolder\n\""+FaultyFolder+"\"\ncontaining at least "+MinNbFile+" "+FileExt+" file(s).";
+        ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
+        MessageQuit="The function \""+ MacroName+"\" stopped because the subfolder the subfolder\n\""+FaultyFolder+"\"\nin the folder:\n\"" +MasterInputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
+        UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+        if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+          CleanExit(MessageQuit);
+        } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
+          MasterInputDirPass=0;
+        }
+      } else {
+        // Check file match between subfolders
+        FilePass=0;
+        InputFileList=newArray(0);
+        for (FileI=0; FileI<CroppedInputList.length; FileI++){
+          for (FileN=0; FileN<ThresholdedInputList.length; FileN++){
+            if(CroppedInputList[FileI]==ThresholdedInputList[FileN]){
+              FilePass++;
+              FileN=ThresholdedInputList.length;
+            }
+          } // end for FileN
+
+          if(FilePass!=FileI+1){
+            MessageError="Sorry but the file:\n\""+CroppedInputList[FileI]+"\"\nin the subfolder:\n\"Cropped\"\ndoes not have a match in the subfolder:\n\"Thresholded\".";
+            MessageFix="The function \""+MacroName+"\" requires the matching files in subfolders.";
+            ErrorResponseArray=newArray("Ignore This File", "Select Another Folder", "Cancel and Close");
+            MessageQuit="The function \""+ MacroName+"\" stopped because of unmatching file in subfolders.";
+            UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+            if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+              CleanExit(MessageQuit);
+            } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
+              FileI=CroppedInputList.length;
+              MasterInputDirPass=0;
+              FilePass=0;
+            }
+
+          } else {
+            InputFileList=Append(InputFileList,CroppedInputList[FileI]);
+
+          }
+        } // end for FileI
+
+        if(InputFileList.length<MinNbFile){
+          MessageError="Sorry but the folder:\n\""+MasterInputDirName+"\"\ndoes not contain subfolders containing at least "+MinNbFile+" matching "+FileExt+" file(s).";
+          MessageFix="The function \""+MacroName+"\" requires the subfolders containing at least "+MinNbFile+" matching "+FileExt+" file(s).";
           ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
           MessageQuit="The function \""+ MacroName+"\" stopped because the subfolder the subfolder\n\""+FaultyFolder+"\"\nin the folder:\n\"" +MasterInputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
           UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
@@ -418,445 +445,391 @@ function CloseUtilityWindows(ListUtilityWindows){
           } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
             MasterInputDirPass=0;
           }
-        } else {
-          // Check file match between subfolders
-          FilePass=0;
-          InputFileList=newArray(0);
-          for (FileI=0; FileI<CroppedInputList.length; FileI++){
-            for (FileN=0; FileN<ThresholdedInputList.length; FileN++){
-              if(CroppedInputList[FileI]==ThresholdedInputList[FileN]){
-                FilePass++;
-                FileN=ThresholdedInputList.length;
-              }
-            } // end for FileN
-
-            if(FilePass!=FileI+1){
-              MessageError="Sorry but the file:\n\""+CroppedInputList[FileI]+"\"\nin the subfolder:\n\"Cropped\"\ndoes not have a match in the subfolder:\n\"Thresholded\".";
-              MessageFix="The function \""+MacroName+"\" requires the matching files in subfolders.";
-              ErrorResponseArray=newArray("Ignore This File", "Select Another Folder", "Cancel and Close");
-              MessageQuit="The function \""+ MacroName+"\" stopped because of unmatching file in subfolders.";
-              UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-              if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-                CleanExit(MessageQuit);
-              } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
-                FileI=CroppedInputList.length;
-                MasterInputDirPass=0;
-                FilePass=0;
-              }
-
-            } else {
-              InputFileList=Append(InputFileList,CroppedInputList[FileI]);
-
-            }
-          } // end for FileI
-
-          if(InputFileList.length<MinNbFile){
-            MessageError="Sorry but the folder:\n\""+MasterInputDirName+"\"\ndoes not contain subfolders containing at least "+MinNbFile+" matching "+FileExt+" file(s).";
-            MessageFix="The function \""+MacroName+"\" requires the subfolders containing at least "+MinNbFile+" matching "+FileExt+" file(s).";
-            ErrorResponseArray=newArray("Select Another Folder", "Cancel and Close");
-            MessageQuit="The function \""+ MacroName+"\" stopped because the subfolder the subfolder\n\""+FaultyFolder+"\"\nin the folder:\n\"" +MasterInputDirName+"\"\ndid not contain at least "+MinNbFile+" "+FileExt+" file(s).";
-            UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
-            if(UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
-              CleanExit(MessageQuit);
-            } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
-              MasterInputDirPass=0;
-            }
-          }else {
-            MasterInputDirPass=1;
-          }
+        }else {
+          MasterInputDirPass=1;
         }
-        } // end of Subfolderpass
-      } // end of function
-/////////////////////////// SelectMasterDirectory
-//////////////////////////////////////////////// Specific Functions
-
-
-
-
-
-
-
-
-
-
-
-
-//////////////////////////////////////////////// Macro starts here
-// Intial Message
-InitialMessage="The function \""+MacroName+"\" will:"
-+"\n - Prompt to select a folder containing the following subfolders:";
-for(n=0;n<RequiredSubfolderArray.length; n++){
-  InitialMessage=InitialMessage+"\n   - \""+RequiredSubfolderArray[n]+"\"";
-}
-InitialMessage=InitialMessage+"\n    Subfolders must contain least "+MinNbFile+" matching "+FileExt+" file(s) to process"
-+"\nFor each "+FileExt+" file:"
-+"\n - Search and track markers"
-+"\n - Prompt user for validation"
-+"\n - Re-analyze the video with adjusted parameters until satisfied"
-+"\n - Save the cleaned videos, labeled videos and the tracked trajectories as TIF files"
-+"\n - Save the result tables as TXT files";
-
-MessageDialog(InitialMessage); // Display the Initial Message
-
-// Display a dialog to inform about the requirements
-MessageGetDirectory="You will be prompted to select a folder containing the following subfolder(s):";
-for (n=0; n<RequiredSubfolderArray.length;n++){
-  MessageGetDirectory=MessageGetDirectory+"\n- \""+RequiredSubfolderArray[n]+"\"";
-}
-MessageGetDirectory=MessageGetDirectory+"\nSubfolders must contain at least "+MinNbFile+" matching "+FileExt+" file(s) to process.";
-MessageDialog(MessageGetDirectory); // Display the message dialog
-
-do{
-  SelectMasterInputDir(RequiredSubfolderArray, MinNbFile, FileExt);
-}while(MasterInputDirPass!=1)
-
-// Create OutputDirectory with the Folder suffix
-if(endsWith(MasterInputDirName,"_Preproccessed_?[0-9]*")){
-  InputDirName=replace(MasterInputDirName,"_Preproccessed_?[0-9]*","");
-} else {
-  InputDirName=MasterInputDirName;
-}
-CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
-
-// Create Output Subdirectory and create general variables for each SubdirectoryOuputdir Path
-CreateOutputSubDir(SubDirArray);
-
-OutputDirPathTables=""+OutputDirPath+"Tables"+File.separator;
-OutputDirPathLabels=""+OutputDirPath+"Labels"+File.separator;
-OutputDirPathCleaned=""+OutputDirPath+"Cleaned"+File.separator;
-OutputDirPathParameters=""+OutputDirPath+"Parameters"+File.separator;
-
-
-
-
-
-
-
-
-//////////////////////////////////////////////// Process each File
-for (FileI = 0; FileI < InputFileList.length; FileI++){
-  setBatchMode(true);
-  InputFileNameI = InputFileList[FileI];
-  Basename=split(InputFileNameI, ".");
-  InputFileNameINoExt=Basename[0];
-  InputFilePathI = MasterInputDirPath+"Thresholded"+File.separator+InputFileNameI;
-  open(InputFilePathI);
-
-  if(nSlices==1){
-    Dialog.create(PluginName+" Information");
-    Dialog.addMessage("Sorry \"" + InputFileNameINoExt+ "\" is not a Stack."
-    +"\nPlease use Analyze>Analyze particles... to detect Markers on images. "
-    +"\nKinemaJ will ignore \""+InputFileNameINoExt+"\" and proceed to the next file.");
-    Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-    Dialog.show();
-    selectWindow(InputFileNameI);
-    close();
-  } else if (nSlices>1){
-    /////////////////////// Get automatic tracking parameters
-    run("Duplicate...", "title=FirstFrame duplicate range=1-1");
-    selectWindow("FirstFrame");
-    run("Analyze Particles...", "size=1-Infinity show=Nothing clear");
-    selectWindow("FirstFrame");
-    close();
-
-    // Get the Results
-    if(nResults>0){ // If there is any result get the arrays
-      AreaArray=newArray(nResults);
-      DistanceArray=newArray(nResults-1); // This is the distance between two markers
-      for (n=0;n<nResults;n++){
-        AreaArray[n]=getResult("Area",n); // This will define the Marker Size
-        if (n<nResults-1){ // This calculates the distance between two consecutive detected marker and will estimate the velocity
-          DistanceArray[n]=sqrt(pow((getResult("BX",n)-getResult("BX",n+1)),2)+pow((getResult("BY",n)-getResult("BY",n+1)),2));
-        }// End of Populate distance array
-      } // End of Populate arrays
-
-      // Get the Statistics of the Arrays
-      Array.getStatistics(AreaArray, MinArea, MaxArea, MeanArea, StdDevArea);
-      Array.getStatistics(DistanceArray, MinDistance, MaxDistance, MeanDistance, StdDevDistance);
-      // Defines the Tracking parameters
-      MinMarkerSize=floor(MeanArea*0.25);
-      MaxMarkerSize=round(MeanArea*4);
-      MaxMarkerVelocity=floor(MeanDistance*0.75); // Using the MaxMarker velocity right below the minimum distance between marker to avoid track mixing
-      selectWindow(InputFileNameI);
-      getDimensions(ImageWidth, ImageHeight, NBchannels, NBFrames, NBStacks);
-      MinTrackLength=floor(NBFrames/9); // why 9? Because ImageJ jump by 10% when clicking on the stack scroll bar
-
-      if(isOpen("Results")){run("Clear Results");selectWindow("Results");run("Close");}
-    } else if (!(nResults>0)){ // else if there is no results prompt the user to select manually the parameters
-      DialogPass=0;
-      while(DialogPass!=1){
-        Dialog.create(PluginName+" Information");
-        Dialog.setInsets(0, 0, 0);
-        Dialog.addMessage("Sorry but "+MacroName+" could not automatically determine the Tracking Parameters.");
-        Dialog.setInsets(0, 0, 0);
-        Dialog.addMessage("Please defines manually the tracking parameters:");
-        Dialog.addNumber("Min Marker Size", 5, 0, 5, " Pixel^2");
-        Dialog.addNumber("Max Marker Size", 500, 0, 5,  " Pixel^2");
-        Dialog.addNumber("Max Marker Velocity", 50, 0, 5," Pixel/Frame");
-        Dialog.addNumber("Min Track duration", 5, 0, 6, " Frame");
-        Dialog.setInsets(0, 0, 0);
-        TryAgainCancelCloseArray=newArray("Try Again", "Cancel & Close");
-        Dialog.setInsets(0, 100, 0);
-        Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2, 1, "Try Again");
-        Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-        Dialog.show();
-        MinMarkerSize=Dialog.getNumber();
-        MaxMarkerSize=Dialog.getNumber();
-        MaxMarkerVelocity=Dialog.getNumber();
-        MinTrackLength=Dialog.getNumber();
-        UserChoice=Dialog.getRadioButton();
-        if (UserChoice=="Cancel & Close"){
-          exit(PluginName+ " Information:\nThe function "+ MacroName+" stopped because the Tracking Parameters were not provided");
-        } else { // end of userchocie is not cancel
-          if(isNaN(MinMarkerSize)==1 || MinMarkerSize<0 || isNaN(MaxMarkerSize)==1 || MaxMarkerSize<0 || isNAN(MaxMarkerVelocity)==1 || MaxMarkerVelocity<0 || isNAN(MinTrackLength)==1 || MinTrackLength<0 || MinTrackLength>nSlices){
-            if(MinTrackLength>nSlices){
-              ErrorMessage="Min Track duration must be an integer between 0 and "+nSlices;
-            } else {
-              ErrorMessage="Sorry but Tracking Parameteres must be positive numbers.";
-            }
-            Dialog.create(PluginName+" Information");
-            Dialog.setInsets(0, 0, 0);
-            Dialog.addMessage(ErrorMessage);
-            TryAgainCancelCloseArray=newArray("Try again", "Cancel and Close");
-            Dialog.setInsets(5, 150, 0);
-            Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
-            Dialog.setLocation(IJPosX, IJPosY+IJSizeY+Spacer);
-            // Display the Dialog and get user choice
-            Dialog.show();
-            UserChoice = Dialog.getRadioButton();
-          } else { // end of if Tracking Parameters not cool
-            DialogPass=1;
-          } // end of else dialog pass
-        } // end of else userchoice is not cancel so it is try again
-      } // end of While Dialog is not passed
-    } // end of if parameters can't be set automatically
-
-    // Exit batch mode and track the markers
-    setBatchMode("exit and display");
-    NextStepChoice="Re-Analyze Current File";
-
-    while(NextStepChoice=="Re-Analyze Current File"){
-      run("Set Measurements...", " redirect=None decimal=3");
-      // Set the parameters of Mtrack2
-      call("MTrack2_.setProperty","minSize",MinMarkerSize);
-      call("MTrack2_.setProperty","maxSize",MaxMarkerSize);
-      call("MTrack2_.setProperty","minTrackLength",MinTrackLength);
-      call("MTrack2_.setProperty","maxVelocity",MaxMarkerVelocity);
-      call("MTrack2_.setProperty","saveResultsFile","false");
-      call("MTrack2_.setProperty","showPaths","false");
-      call("MTrack2_.setProperty","showPathLengths","false");
-      call("MTrack2_.setProperty","showPositions","false");
-      call("MTrack2_.setProperty","showLabels","true");
-      call("MTrack2_.setProperty","skipDialogue","true");
-
-      selectWindow(InputFileNameI);
-      setLocation(IJPosX,IJPosY+IJSizeY+Spacer,IJSizeX,screenHeight*0.3);
-      getLocationAndSize(ThresholdedImagePosX, ThresholdedImagePosY, ThresholdedImageSizeX, ThresholdedImageSizeY);
-      run("MTrack2");
-      selectWindow(InputFileNameI+" labels");
-      rename("Tracked");
-      setLocation(IJPosX,IJPosY+IJSizeY+Spacer+ThresholdedImageSizeY+Spacer,IJSizeX, screenHeight*0.3);
-      getLocationAndSize(TrackedImagePosX,TrackedImagePosY,TrackedImageSizeX,TrackedImageSizeY);
-
-      if(!isOpen("Original")){ // Open the Cropped file if it is not already opened and call it Original
-        InputFilePathiCropped = MasterInputDirPath+"Cropped"+File.separator+InputFileNameI;
-        open(InputFilePathiCropped);
-        rename("Original");
       }
-      selectWindow("Original");
-      setLocation(TrackedImagePosX,TrackedImagePosY+TrackedImageSizeY+Spacer,IJSizeX, screenHeight-(TrackedImagePosY+TrackedImageSizeY+Spacer));
-      getLocationAndSize(OriginalImagePosX,OriginalImagePosY,OriginalImageSizeX,OriginalImageSizeY);
-
-      if(!isOpen("Synchronize Windows")){
-        run("Synchronize Windows");
-        selectWindow("Synchronize Windows");
-      }
-      selectWindow("Synchronize Windows");
-      setLocation(OriginalImagePosX+OriginalImageSizeX+Spacer,OriginalImagePosY);
-
-      /////////////////// Wait for User interaction
-      setForegroundColor(255, 255, 255); // Foreground is white
-      setBackgroundColor(0, 0, 0); // Background is black
-      setTool(17); // Select the Bursh
-      selectWindow(InputFileNameI);
-
-      waitForUser("KinemaJ Information", ""
-      +"- Inspect the tracked video (middle)"
-      +"\n- Correct any missing marker in the Thresholded video (top)"
-      +"\n- Use the Original video as reference (bottom)"
-      +"\n- Select z-Slices and click Synchronize All to Synchronize the Windows"
-      +"\n \nPress OK to Re-Analyze or to Save the Results & Move to the Next File.");
+    } // end of Subfolderpass
+  } // end of function
+  /////////////////////////// SelectMasterDirectory
+  //////////////////////////////////////////////// Specific Functions
 
 
-      /////////// Dialog for Move on Next file or Redo Processing
-      Dialog.create(PluginName+" Information");
-      NextStepArray=newArray("Re-Analyze Current File", "Save and Move to Next File");
-      Dialog.setInsets(0, 10, 0);
-      Dialog.addMessage("What to do Next?");
-      Dialog.setInsets(0, 0, 0);
-      Dialog.addRadioButtonGroup("", NextStepArray, 2,1, "Re-Analyze Current File");
-      Dialog.setLocation(TrackedImagePosX+TrackedImageSizeX+Spacer,TrackedImagePosY);
-      Dialog.show();
-      NextStepChoice = Dialog.getRadioButton();
 
-      /////////////////// If Re-Analyze Display Dialog and Update Tracking parameters
-      if(NextStepChoice=="Re-Analyze Current File"){
+
+
+
+
+
+
+
+
+
+  //////////////////////////////////////////////// Macro starts here
+  // Intial Message
+  InitialMessage="The function \""+MacroName+"\" will:"
+  +"\n - Prompt to select a folder containing the following subfolders:";
+  for(n=0;n<RequiredSubfolderArray.length; n++){
+    InitialMessage=InitialMessage+"\n   - \""+RequiredSubfolderArray[n]+"\"";
+  }
+  InitialMessage=InitialMessage+"\n    Subfolders must contain at least "+MinNbFile+" matching "+FileExt+" file(s) to process"
+  +"\n "
+  +"\nFor each "+FileExt+" file:"
+  +"\n - Search and track markers"
+  +"\n - Prompt user for validation"
+  +"\n - Re-analyze the video with adjusted parameters until satisfied"
+  +"\n - Save the cleaned videos, labeled videos and the tracked trajectories as TIF files"
+  +"\n - Save the result tables as TXT files";
+
+  MessageDialog(InitialMessage); // Display the Initial Message
+
+  // Display a dialog to inform about the requirements
+  MessageGetDirectory="You will be prompted to select a folder containing the following subfolder(s):";
+  for (n=0; n<RequiredSubfolderArray.length;n++){
+    MessageGetDirectory=MessageGetDirectory+"\n- \""+RequiredSubfolderArray[n]+"\"";
+  }
+  MessageGetDirectory=MessageGetDirectory+"\nSubfolders must contain at least "+MinNbFile+" matching "+FileExt+" file(s) to process.";
+  MessageDialog(MessageGetDirectory); // Display the message dialog
+
+  do{
+    SelectMasterInputDir(RequiredSubfolderArray, MinNbFile, FileExt);
+  }while(MasterInputDirPass!=1)
+
+  // Create OutputDirectory with the Folder suffix
+  if(endsWith(MasterInputDirName,"_Preproccessed_?[0-9]*")){
+    InputDirName=replace(MasterInputDirName,"_Preproccessed_?[0-9]*","");
+  } else {
+    InputDirName=MasterInputDirName;
+  }
+  CreateOutputDir(ParentDir, InputDirName, FolderSuffix);
+
+  // Create Output Subdirectory and create general variables for each SubdirectoryOuputdir Path
+  CreateOutputSubDir(SubDirArray);
+
+  OutputDirPathTables=""+OutputDirPath+"Tables"+File.separator;
+  OutputDirPathLabels=""+OutputDirPath+"Labels"+File.separator;
+  OutputDirPathCleaned=""+OutputDirPath+"Cleaned"+File.separator;
+  OutputDirPathParameters=""+OutputDirPath+"Parameters"+File.separator;
+
+
+
+
+
+
+
+
+  //////////////////////////////////////////////// Process each File
+  for (FileI = 0; FileI < InputFileList.length; FileI++){
+    setBatchMode(true);
+    InputFileNameI = InputFileList[FileI];
+    BasenameArrayFileI=split(InputFileNameI, ".");
+    InputFileNameINoExt=BasenameArrayFileI[0];
+    InputFilePathI = MasterInputDirPath+"Thresholded"+File.separator+InputFileNameI;
+    open(InputFilePathI);
+    rename("Source");
+    if(nSlices==1){
+      Message="Sorry \""+InputFileNameINoExt+"\" has only one frame."
+      +"\nPlease use Analyze>Analyze particles... to detect Markers on still images. "
+      +"\n"+PluginNameKinemaJ+" will ignore \""+InputFileNameINoExt+"\" and proceed to the next file.");
+      MessageDialog(Message);
+      selectWindow("Source");
+      close();
+    } else if (nSlices>1){
+      /////////////////////// Get automatic tracking parameters
+      run("Duplicate...", "title=FirstFrame duplicate range=1-1");
+      selectWindow("FirstFrame");
+      run("Analyze Particles...", "size=1-Infinity show=Nothing clear");
+      selectWindow("FirstFrame");
+      close();
+
+      // Get the Results
+      if(nResults>1){ // If there is any result get the arrays
+        AreaArray=newArray(nResults);
+        DistanceArray=newArray(nResults-1); // This is the distance between two markers
+        for (n=0;n<nResults;n++){
+          AreaArray[n]=getResult("Area",n); // This will define the Marker Size
+          if (n<nResults-1){ // This calculates the distance between two consecutive detected marker and will estimate the velocity
+            DistanceArray[n]=sqrt(pow((getResult("BX",n)-getResult("BX",n+1)),2)+pow((getResult("BY",n)-getResult("BY",n+1)),2));
+          }// End of Populate distance array
+        } // End of Populate arrays
+
+        // Get the Statistics of the Arrays
+        Array.getStatistics(AreaArray, MinArea, MaxArea, MeanArea, StdDevArea);
+        Array.getStatistics(DistanceArray, MinDistance, MaxDistance, MeanDistance, StdDevDistance);
+        // Defines the Tracking parameters
+        MinMarkerSize=floor(MeanArea*0.25); // Min Marker size should be roughtly a quarter of the mean
+        MaxMarkerSize=round(MeanArea*4); // Max Marker size should be roughtly a quarter of the mean
+        MaxMarkerVelocity=floor(MeanDistance*0.75); // Using the MaxMarker velocity right below the mean distance between marker to avoid track mixing
+        selectWindow("Source");
+        getDimensions(ImageWidth, ImageHeight, nbChannels, nbSlices, nbFrames);
+        MinTrackLength=floor(nbSlices/9); // why 9? Because ImageJ jump by 10% when clicking on the stack scroll bar
+        if(isOpen("Results")){run("Clear Results");selectWindow("Results");run("Close");}
+      } else if (!(nResults>1)){ // else if there is no results prompt the user to select manually the parameters
         DialogPass=0;
         while(DialogPass!=1){
-          ProcessingArray=newArray("Reduce Markers", "Amplify Markers", "Remove Noise", "Unmerge Markers");
-          ProcessingDefaultArray=newArray(false,false,false,false);
           Dialog.create(PluginName+" Information");
           Dialog.setInsets(0, 0, 0);
-          Dialog.addMessage("If necessary select an option below:");
+          Dialog.addMessage("Sorry but "+MacroName+" could not automatically determine the tracking parameters.");
           Dialog.setInsets(0, 0, 0);
-          Dialog.addCheckbox("Flip the Video Horizontally", false);
+          Dialog.addMessage("Please define manually the tracking parameters:");
+          Dialog.addNumber("Min Marker Size", 5, 0, 5, " Pixel^2");
+          Dialog.addNumber("Max Marker Size", 500, 0, 5,  " Pixel^2");
+          Dialog.addNumber("Max Marker Velocity", 50, 0, 5," Pixel/Frame");
+          Dialog.addNumber("Min Track Duration", 5, 0, 6, " Frame");
           Dialog.setInsets(0, 0, 0);
-          Dialog.addCheckboxGroup(2,2,ProcessingArray,ProcessingDefaultArray);
-          Dialog.addMessage("Adjust Tracking parameters:");
-          Dialog.addNumber("Min Marker Size (was " + MinMarkerSize+")", MinMarkerSize, 0, 5, " Pixel^2");
-          Dialog.addNumber("Max Marker Size (was " + MaxMarkerSize+")", MaxMarkerSize, 0, 5,  " Pixel^2");
-          Dialog.addNumber("Max Marker Velocity (was " + MaxMarkerVelocity+")", MaxMarkerVelocity, 0, 5," Pixel/Frame");
-          Dialog.addNumber("Min Track duration (was " + MinTrackLength+")", MinTrackLength, 0, 6, " Frame (Max "+nSlices+")");
-          Dialog.setLocation(TrackedImagePosX+TrackedImageSizeX+Spacer,TrackedImagePosY);
+          Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
           Dialog.show();
-          FlipChoice=Dialog.getCheckbox();
-          ReduceMarkerChoice=Dialog.getCheckbox();
-          AmplifyMarkerChoice=Dialog.getCheckbox();
-          RemoveNoiseChoice=Dialog.getCheckbox();
-          UnmergeMarkerChoice=Dialog.getCheckbox();
-          MinMarkerSizeNew=Dialog.getNumber();
-          MaxMarkerSizeNew=Dialog.getNumber();
-          MaxMarkerVelocityNew=Dialog.getNumber();
-          MinTrackLengthNew=Dialog.getNumber();
+          MinMarkerSize=Dialog.getNumber();
+          MaxMarkerSize=Dialog.getNumber();
+          MaxMarkerVelocity=Dialog.getNumber();
+          MinTrackLength=Dialog.getNumber();
+          if(isNaN(MinMarkerSize)==1 || MinMarkerSize<0 || isNaN(MaxMarkerSize)==1 || MaxMarkerSize<0 || isNaN(MaxMarkerVelocity)==1 || MaxMarkerVelocity<0 || isNaN(MinTrackLength)==1 || MinTrackLength<=0 || MinTrackLength>nbSlices){
+              if(MinTrackLength>nbSlices){
+                              MessageError="Sorry but \"Min Track Duration\" must be an integer between 1 and "+nbSlices;
+              } else {
+                MessageError="Sorry but Tracking Parameters must be positive numbers";
+              }
+              MessageFix="The function \""+MacroName+"\" requires positive numbers for Tracking Parameters.";
+              ErrorResponseArray=newArray("Try Again", "Cancel and Close");
+              MessageQuit="The function \""+ MacroName+"\" stopped because Tracking Parameters were not positive numbers.";
+              UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+              if(UserResponseErrorDialog==ErrorResponseArray[0]){
+                  DialogPass=0;
+                } else if (UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+                CleanExit(MessageQuit);
+              }
+            } else { // Else tracking parameters are good
+              DialogPass=1;
+            } // end of else dialog pass
+        } // end of While Dialog is not passed
+      } // end of if parameters can't be set automatically
 
-          if(isNaN(MinMarkerSizeNew)==1 || MinMarkerSizeNew<0 || isNaN(MaxMarkerSizeNew)==1 || MaxMarkerSizeNew<0 || isNaN(MaxMarkerVelocityNew)==1 || MaxMarkerVelocityNew<0 || isNaN(MinTrackLengthNew)==1 || MinTrackLengthNew<0 || MinTrackLengthNew>nSlices){
-            if(MinTrackLengthNew>nSlices){
-              ErrorMessage="Min Track duration must be an integer between 0 and "+nSlices;
-            } else {
-              ErrorMessage="Sorry but Tracking Parameteres must be positive numbers.";
-            }
+      // Exit batch mode and track the markers
+      setBatchMode("exit and display");
+      NextStepChoice="Re-Analyze Current File";
+
+      while(NextStepChoice=="Re-Analyze Current File"){
+        run("Set Measurements...", " redirect=None decimal=3");
+        // Set the parameters of Mtrack2
+        call("MTrack2_.setProperty","minSize",MinMarkerSize);
+        call("MTrack2_.setProperty","maxSize",MaxMarkerSize);
+        call("MTrack2_.setProperty","minTrackLength",MinTrackLength);
+        call("MTrack2_.setProperty","maxVelocity",MaxMarkerVelocity);
+        call("MTrack2_.setProperty","saveResultsFile","false");
+        call("MTrack2_.setProperty","showPaths","false");
+        call("MTrack2_.setProperty","showPathLengths","false");
+        call("MTrack2_.setProperty","showPositions","false");
+        call("MTrack2_.setProperty","showLabels","true");
+        call("MTrack2_.setProperty","skipDialogue","true");
+
+        selectWindow("Source");
+        setLocation(IJPosX,IJPosY+IJSizeY+Spacer,IJSizeX,screenHeight*0.3);
+        getLocationAndSize(SourceImagePosX, SourceImagePosY, SourceImageSizeX, SourceImageSizeY);
+        run("MTrack2");
+        selectWindow("Source"+" labels");
+        rename("Tracked");
+        setLocation(IJPosX,IJPosY+IJSizeY+Spacer+SourceImageSizeY+Spacer,IJSizeX, screenHeight*0.3);
+        getLocationAndSize(TrackedImagePosX,TrackedImagePosY,TrackedImageSizeX,TrackedImageSizeY);
+
+        if(!isOpen("Original")){ // Open the Cropped file if it is not already opened and call it Original
+          InputFilePathCropped = MasterInputDirPath+"Cropped"+File.separator+InputFileNameI;
+          open(InputFilePathCropped);
+          rename("Original");
+        }
+        selectWindow("Original");
+        setLocation(TrackedImagePosX,TrackedImagePosY+TrackedImageSizeY+Spacer,IJSizeX, screenHeight-(TrackedImagePosY+TrackedImageSizeY+Spacer));
+        getLocationAndSize(OriginalImagePosX,OriginalImagePosY,OriginalImageSizeX,OriginalImageSizeY);
+
+        if(!isOpen("Synchronize Windows")){
+          run("Synchronize Windows");
+          selectWindow("Synchronize Windows");
+        }
+        selectWindow("Synchronize Windows");
+        setLocation(OriginalImagePosX+OriginalImageSizeX+Spacer,OriginalImagePosY);
+
+        /////////////////// Wait for User interaction
+        setForegroundColor(255, 255, 255); // Foreground is white
+        setBackgroundColor(0, 0, 0); // Background is black
+        setTool(17); // Select the Bursh
+        selectWindow("Source");
+call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+        waitForUser("KinemaJ Information", ""
+        +"- Inspect the Tracked video (middle)"
+        +"\n- Correct any missing marker in the Source video (top)"
+        +"\n- Use the Original video as reference (bottom)"
+        +"\n- Select z-Slices and click Synchronize All to Synchronize the Windows"
+        +"\n \nPress OK to Re-Analyze or to Save the Results & Move to the Next File.");
+
+
+        /////////// Dialog for Move on Next file or Redo Processing
+
+        MessageError="What would you like to do Next?";
+        MessageFix="";
+        ErrorResponseArray=newArray("Re-Analyze Current File", "Save and Move to Next File");
+        NextStepChoice=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+
+        /////////////////// If Re-Analyze Display Dialog and Update Tracking parameters
+        if(NextStepChoice=="Re-Analyze Current File"){
+          DialogPass=0;
+          while(DialogPass!=1){
+            ProcessingArray=newArray("Reduce Markers", "Amplify Markers", "Remove Noise", "Unmerge Markers");
+            ProcessingDefaultArray=newArray(false,false,false,false);
             Dialog.create(PluginName+" Information");
             Dialog.setInsets(0, 0, 0);
-            Dialog.addMessage(ErrorMessage);
-            TryAgainCancelCloseArray=newArray("Try again", "Cancel and Close");
-            Dialog.setInsets(5, 150, 0);
-            Dialog.addRadioButtonGroup("", TryAgainCancelCloseArray, 2,1, "Try again");
-            Dialog.setLocation(TrackedImagePosX+TrackedImageSizeX+Spacer,TrackedImagePosY);
-            // Display the Dialog and get user choice
+            Dialog.addMessage("If necessary select an option below:");
+            Dialog.setInsets(0, 0, 0);
+            Dialog.addCheckbox("Flip the Video Horizontally", false);
+            Dialog.setInsets(0, 0, 0);
+            Dialog.addCheckboxGroup(2,2,ProcessingArray,ProcessingDefaultArray);
+            Dialog.addMessage("Adjust Tracking parameters:");
+            Dialog.addNumber("Min Marker Size (was " + MinMarkerSize+")", MinMarkerSize, 0, 5, " Pixel^2");
+            Dialog.addNumber("Max Marker Size (was " + MaxMarkerSize+")", MaxMarkerSize, 0, 5,  " Pixel^2");
+            Dialog.addNumber("Max Marker Velocity (was " + MaxMarkerVelocity+")", MaxMarkerVelocity, 0, 5," Pixel/Frame");
+            Dialog.addNumber("Min Track duration (was " + MinTrackLength+")", MinTrackLength, 0, 6, " Frame (Max "+nbSlices+")");
+  Dialog.setLocation(ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
             Dialog.show();
-            UserChoice = Dialog.getRadioButton();
-          } else {
-            MinMarkerSize=MinMarkerSizeNew;
-            MaxMarkerSize=MaxMarkerSizeNew;
-            MaxMarkerVelocity=MaxMarkerVelocityNew;
-            MinTrackLength=MinTrackLengthNew;
-            DialogPass=1;
-          }//end of else
-        } // end of while DialogPass
+            FlipChoice=Dialog.getCheckbox();
+            ReduceMarkerChoice=Dialog.getCheckbox();
+            AmplifyMarkerChoice=Dialog.getCheckbox();
+            RemoveNoiseChoice=Dialog.getCheckbox();
+            UnmergeMarkerChoice=Dialog.getCheckbox();
+            MinMarkerSizeNew=Dialog.getNumber();
+            MaxMarkerSizeNew=Dialog.getNumber();
+            MaxMarkerVelocityNew=Dialog.getNumber();
+            MinTrackLengthNew=Dialog.getNumber();
 
-        selectWindow("Tracked"); // Close the previously tracked version
+            if(isNaN(MinMarkerSize)==1 || MinMarkerSize<0 || isNaN(MaxMarkerSize)==1 || MaxMarkerSize<0 || isNaN(MaxMarkerVelocity)==1 || MaxMarkerVelocity<0 || isNaN(MinTrackLength)==1 || MinTrackLength<=0 || MinTrackLength>nbSlices){
+                if(MinTrackLength>nbSlices){
+                                MessageError="Sorry but \"Min Track Duration\" must be an integer between 1 and "+nbSlices;
+                } else {
+                  MessageError="Sorry but Tracking Parameters must be positive numbers";
+                }
+                MessageFix="The function \""+MacroName+"\" requires positive numbers for Tracking Parameters.";
+                ErrorResponseArray=newArray("Try Again", "Cancel and Close");
+                MessageQuit="The function \""+ MacroName+"\" stopped because Tracking Parameters were not positive numbers.";
+                UserResponseErrorDialog=ErrorDialog(MessageError, MessageFix, ErrorResponseArray);
+                if(UserResponseErrorDialog==ErrorResponseArray[0]){
+                    DialogPass=0;
+                  } else if (UserResponseErrorDialog==ErrorResponseArray[ErrorResponseArray.length-1]){
+                  CleanExit(MessageQuit);
+                }
+              } else { // Else tracking parameters are good
+                DialogPass=1;
+                if(MinMarkerSizeNew>MaxMarkerSizeNew){
+                  MaxMarkerSize=MinMarkerSizeNew;
+                  MinMarkerSize=MaxMarkerSizeNew;
+                }else {
+                MinMarkerSize=MinMarkerSizeNew;
+                MaxMarkerSize=MaxMarkerSizeNew;
+              }
+                MaxMarkerVelocity=MaxMarkerVelocityNew;
+                MinTrackLength=MinTrackLengthNew;
+              } // end of else dialog pass
+              } // end of while DialogPass
+
+          selectWindow("Tracked"); // Close the previously tracked version
+          close();
+          run("Clear Results");
+
+
+          // Apply the processing options
+          if(FlipChoice==1){
+            selectWindow("Source");
+            run("Flip Horizontally", "stack");
+            if(isOpen("Original")){ // Open the Cropped file if it is not already opened and call it Original
+              selectWindow("Original");
+              run("Flip Horizontally", "stack");
+            }
+            FlipChoice==0; // Reset the processing option to default
+          }
+
+          if(RemoveNoiseChoice==1){
+          selectWindow("Source");
+            run("Open", "stack");
+            RemoveNoiseChoice==0; // Reset the processing option to default
+          }
+
+          if(AmplifyMarkerChoice==1){
+          selectWindow("Source");
+            run("Dilate", "stack");
+            AmplifyMarkerChoice==0; // Reset the processing option to default
+          }
+
+          if(UnmergeMarkerChoice==1){
+            selectWindow("Source");
+            run("Watershed", "stack");
+            UnmergeMarkerChoice==0; // Reset the processing option to default
+          }
+
+          if(ReduceMarkerChoice==1){
+          selectWindow("Source");
+            run("Erode", "stack");
+            ReduceMarkerChoice==0; // Reset the processing option to default
+          }
+        } /////////////////// If Re-Analyze Display Dialog and Update Tracking parameters
+      } //////////////////////////////// End of while loop Next step choice is Re-Analyze
+
+      /////////////////// If Choice is Save and Move to Next File
+      if(NextStepChoice=="Save and Move to Next File"){
+        selectWindow("Original");
         close();
+        selectWindow("Tracked");
+        saveAs("Tif", OutputDirPathLabels+InputFileNameINoExt+"_Labels.tif");
+        close();
+        selectWindow("Source");
+        rename(InputFileNameI);
+        setBatchMode(true);
+        ////////// Re Run the Mtrack2 but saving the data this time in TXT file
+        // Create output path name for excel file
+        OutputTablePathI=OutputDirPathTables+InputFileNameINoExt+".txt";
+        // Invert the Y coordinates
+        run("Set Measurements...", "invert redirect=None decimal=3");
+        // Set the parameters of Mtrack2
+        call("MTrack2_.setProperty","minSize",MinMarkerSize);
+        call("MTrack2_.setProperty","maxSize",MaxMarkerSize);
+        call("MTrack2_.setProperty","minTrackLength",MinTrackLength);
+        call("MTrack2_.setProperty","maxVelocity",MaxMarkerVelocity);
+        call("MTrack2_.setProperty","saveResultsFile","true");
+        call("MTrack2_.setProperty","showPaths","false");
+        call("MTrack2_.setProperty","showPathLengths","false");
+        call("MTrack2_.setProperty","showPositions","false");
+        call("MTrack2_.setProperty","showLabels","false");
+        call("MTrack2_.setProperty","skipDialogue","true");
+        run("MTrack2", "save=&OutputTablePathI");
+        // Restore the Y coordinates
+        run("Set Measurements...", "redirect=None decimal=3");
         run("Clear Results");
 
+        // Save the Cleaned version of the file
+        selectWindow(InputFileNameI);
+        saveAs("Tif", OutputDirPathCleaned+InputFileNameINoExt+"_Cleaned.tif");
+        close();
 
-        // Apply the processing options
-        if(FlipChoice==1){
-          selectWindow(InputFileNameI);
-          run("Flip Horizontally", "stack");
-          if(isOpen("Original")){ // Open the Cropped file if it is not already opened and call it Original
-            selectWindow("Original");
-            run("Flip Horizontally", "stack");
-          }
-          FlipChoice==0; // Reset the processing option to default
-        }
+        // Save the Tracking parameters
+        ParametersData = File.open(OutputDirPathParameters+InputFileNameINoExt+"_TrackingParameters.txt");
+        CellSeparator= "\t";
+        LineSeparator="\n";
+        print(ParametersData, "Filename"+CellSeparator+InputFileNameINoExt+LineSeparator);
+        print(ParametersData, "Min Marker Size (pixel^2)"+CellSeparator+MinMarkerSize+LineSeparator);
+        print(ParametersData, "Max Marker Size (pixel^2)"+CellSeparator+MaxMarkerSize+LineSeparator);
+        print(ParametersData, "Max Marker Velocity (pixel/frame)"+CellSeparator+MaxMarkerVelocity+LineSeparator);
+        print(ParametersData, "Min Track duration (frame)"+CellSeparator+MinTrackLength+LineSeparator);
+        File.close(ParametersData);
+      } /////////////////// If Choice is Save and Move to Next File
 
-        if(RemoveNoiseChoice==1){
-          selectWindow(InputFileNameI);
-          run("Open", "stack");
-          RemoveNoiseChoice==0; // Reset the processing option to default
-        }
+    } // If nSlices>1
 
-        if(AmplifyMarkerChoice==1){
-          selectWindow(InputFileNameI);
-          run("Dilate", "stack");
-          AmplifyMarkerChoice==0; // Reset the processing option to default
-        }
+    // Update the progress bar
+    showProgress(FileI, InputFileList.length);
+    call("java.lang.System.gc"); // Run garbage collector
+  }/////////////////////End of for FileI loop
 
-        if(UnmergeMarkerChoice==1){
-          selectWindow(InputFileNameI);
-          run("Watershed", "stack");
-          UnmergeMarkerChoice==0; // Reset the processing option to default
-        }
-
-        if(ReduceMarkerChoice==1){
-          selectWindow(InputFileNameI);
-          run("Erode", "stack");
-          ReduceMarkerChoice==0; // Reset the processing option to default
-        }
-      } /////////////////// If Re-Analyze Display Dialog and Update Tracking parameters
-    } //////////////////////////////// End of while loop Next step choice is Re-Analyze
-
-    /////////////////// If Choice is Save and Move to Next File
-    if(NextStepChoice=="Save and Move to Next File"){
-      selectWindow("Original");
-      close();
-      selectWindow("Tracked");
-      saveAs("Tif", OutputDirPathLabels+InputFileNameINoExt+"_Labels.tif");
-      close();
-      selectWindow(InputFileNameI);
-      setBatchMode(true);
-      ////////// Re Run the Mtrack2 but saving the data this time in CSV file
-      // Create output path name for excel file
-      OutputTablePathi=OutputDirPathTables+InputFileNameINoExt+".CSV";
-      // Invert the Y coordinates
-      run("Set Measurements...", "invert redirect=None decimal=3");
-      // Set the parameters of Mtrack2
-      call("MTrack2csv_.setProperty","minSize",MinMarkerSize);
-      call("MTrack2csv_.setProperty","maxSize",MaxMarkerSize);
-      call("MTrack2csv_.setProperty","minTrackLength",MinTrackLength);
-      call("MTrack2csv_.setProperty","maxVelocity",MaxMarkerVelocity);
-      call("MTrack2csv_.setProperty","saveResultsFile","true");
-      call("MTrack2csv_.setProperty","showPaths","false");
-      call("MTrack2csv_.setProperty","showPathLengths","false");
-      call("MTrack2csv_.setProperty","showPositions","false");
-      call("MTrack2csv_.setProperty","showLabels","false");
-      call("MTrack2csv_.setProperty","skipDialogue","true");
-      run("MTrack2csv", "save=&OutputTablePathi");
-      // Restore the Y coordinates
-      run("Set Measurements...", "redirect=None decimal=3");
-      run("Clear Results");
-
-      // Save the Cleaned version of the file
-      selectWindow(InputFileNameI);
-      saveAs("Tif", OutputDirPathCleaned+InputFileNameINoExt+"_Cleaned.tif");
-      close();
-
-      // Save the Tracking parameters
-      ParametersData = File.open(OutputDirPathParameters+InputFileNameINoExt+"_TrackingParameters.csv");
-      CellSeparator= ",";
-      LineSeparator="\n";
-      print(ParametersData, "Filename"+CellSeparator+InputFileNameINoExt+LineSeparator);
-      print(ParametersData, "Min Marker Size (pixel^2)"+CellSeparator+MinMarkerSize+LineSeparator);
-      print(ParametersData, "Max Marker Size (pixel^2)"+CellSeparator+MaxMarkerSize+LineSeparator);
-      print(ParametersData, "Max Marker Velocity (pixel/frame)"+CellSeparator+MaxMarkerVelocity+LineSeparator);
-      print(ParametersData, "Min Track duration (frame)"+CellSeparator+MinTrackLength+LineSeparator);
-      File.close(ParametersData);
-    } /////////////////// If Choice is Save and Move to Next File
-
-  } // If nSlices>1
-
-  // Update the progress bar
-  showProgress(FileI, InputFileList.length);
-  call("java.lang.System.gc"); // Run garbage collector
-}/////////////////////End of for FileI loop
-
-// Restore the MTack2 dialog box
-call("MTrack2_.setProperty","skipDialogue","false");
-// Restore the MTack2 dialog box
-call("MTrack2csv_.setProperty","skipDialogue","false");
+  // Restore the MTack2 dialog box
+  call("MTrack2_.setProperty","skipDialogue","false");
 
 
 
 
-//////////////////////////////////////////////// Closing Dialog
-CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, MasterInputDirName, OutputDirName);
+
+  //////////////////////////////////////////////// Closing Dialog
+  CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, MasterInputDirName, OutputDirName);
