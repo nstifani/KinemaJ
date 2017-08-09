@@ -308,7 +308,7 @@ function CloseUtilityWindows(ListUtilityWindows){
   //  var MasterInputItemList; // List of Files and folders in the input directory (all files no matter the extension)
   //  var InputCorrectExtFileList; // List of files with the correct extension
   var InputFileList;
-  //  var NbFile;
+  var NbFile;
   RequiredSubfolderArray=newArray("Cropped", "Thresholded");
   MinNbFile=1;
   FileExt="TIF";
@@ -445,8 +445,9 @@ function CloseUtilityWindows(ListUtilityWindows){
           } else if(UserResponseErrorDialog=="Select Another Folder") { // Else user want to select another folder
             MasterInputDirPass=0;
           }
-        }else {
+        }else{
           MasterInputDirPass=1;
+          NbFile=InputFileList.length;
         }
       }
     } // end of Subfolderpass
@@ -537,6 +538,8 @@ function CloseUtilityWindows(ListUtilityWindows){
       /////////////////////// Get automatic tracking parameters
       run("Duplicate...", "title=FirstFrame duplicate range=1-1");
       selectWindow("FirstFrame");
+      // Set the measurements as area, center of mass and regular Y coordinates
+      run("Set Measurements...", "area center redirect=None decimal=9");
       run("Analyze Particles...", "size=1-Infinity show=Nothing clear");
       selectWindow("FirstFrame");
       close();
@@ -548,10 +551,10 @@ function CloseUtilityWindows(ListUtilityWindows){
         for (n=0;n<nResults;n++){
           AreaArray[n]=getResult("Area",n); // This will define the Marker Size
           if (n<nResults-1){ // This calculates the distance between two consecutive detected marker and will estimate the velocity
-            DistanceArray[n]=sqrt(pow((getResult("BX",n)-getResult("BX",n+1)),2)+pow((getResult("BY",n)-getResult("BY",n+1)),2));
+            DistanceArray[n]=sqrt(pow((getResult("XM",n)-getResult("XM",n+1)),2)+pow((getResult("YM",n)-getResult("YM",n+1)),2));
           }// End of Populate distance array
         } // End of Populate arrays
-
+          run("Clear Results");
         // Get the Statistics of the Arrays
         Array.getStatistics(AreaArray, MinArea, MaxArea, MeanArea, StdDevArea);
         Array.getStatistics(DistanceArray, MinDistance, MaxDistance, MeanDistance, StdDevDistance);
@@ -564,6 +567,7 @@ function CloseUtilityWindows(ListUtilityWindows){
         MinTrackLength=floor(nbSlices/9); // why 9? Because ImageJ jump by 10% when clicking on the stack scroll bar
         if(isOpen("Results")){run("Clear Results");selectWindow("Results");run("Close");}
       } else if (!(nResults>1)){ // else if there is no results prompt the user to select manually the parameters
+          run("Clear Results");
         DialogPass=0;
         while(DialogPass!=1){
           Dialog.create(PluginName+" Information");
@@ -608,7 +612,9 @@ function CloseUtilityWindows(ListUtilityWindows){
       NextStepChoice="Re-Analyze Current File";
 
       while(NextStepChoice=="Re-Analyze Current File"){
-        run("Set Measurements...", " redirect=None decimal=3");
+        // REGULAR Y coordinates
+      run("Set Measurements...", "redirect=None decimal=9");
+
         // Set the parameters of Mtrack2
         call("MTrack2_.setProperty","minSize",MinMarkerSize);
         call("MTrack2_.setProperty","maxSize",MaxMarkerSize);
@@ -641,17 +647,15 @@ function CloseUtilityWindows(ListUtilityWindows){
 
         if(!isOpen("Synchronize Windows")){
           run("Synchronize Windows");
-          selectWindow("Synchronize Windows");
         }
-        selectWindow("Synchronize Windows");
-        setLocation(OriginalImagePosX+OriginalImageSizeX+Spacer,OriginalImagePosY);
+        selectWindow("Synchronize Windows"); setLocation(OriginalImagePosX+OriginalImageSizeX+Spacer,OriginalImagePosY);
 
         /////////////////// Wait for User interaction
         setForegroundColor(255, 255, 255); // Foreground is white
         setBackgroundColor(0, 0, 0); // Background is black
         setTool(17); // Select the Bursh
         selectWindow("Source");
-call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
+        call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
         waitForUser("KinemaJ Information", ""
         +"- Inspect the Tracked video (middle)"
         +"\n- Correct any missing marker in the Source video (top)"
@@ -739,31 +743,31 @@ call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+Toolba
               selectWindow("Original");
               run("Flip Horizontally", "stack");
             }
-            FlipChoice==0; // Reset the processing option to default
+            FlipChoice=0; // Reset the processing option to default
           }
 
           if(RemoveNoiseChoice==1){
           selectWindow("Source");
             run("Open", "stack");
-            RemoveNoiseChoice==0; // Reset the processing option to default
+            RemoveNoiseChoice=0; // Reset the processing option to default
           }
 
           if(AmplifyMarkerChoice==1){
           selectWindow("Source");
             run("Dilate", "stack");
-            AmplifyMarkerChoice==0; // Reset the processing option to default
+            AmplifyMarkerChoice=0; // Reset the processing option to default
           }
 
           if(UnmergeMarkerChoice==1){
             selectWindow("Source");
             run("Watershed", "stack");
-            UnmergeMarkerChoice==0; // Reset the processing option to default
+            UnmergeMarkerChoice=0; // Reset the processing option to default
           }
 
           if(ReduceMarkerChoice==1){
           selectWindow("Source");
             run("Erode", "stack");
-            ReduceMarkerChoice==0; // Reset the processing option to default
+            ReduceMarkerChoice=0; // Reset the processing option to default
           }
         } /////////////////// If Re-Analyze Display Dialog and Update Tracking parameters
       } //////////////////////////////// End of while loop Next step choice is Re-Analyze
@@ -782,7 +786,8 @@ call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+Toolba
         // Create output path name for excel file
         OutputTablePathI=OutputDirPathTables+InputFileNameINoExt+".txt";
         // Invert the Y coordinates
-        run("Set Measurements...", "invert redirect=None decimal=3");
+      run("Set Measurements...", "invert redirect=None decimal=9");
+
         // Set the parameters of Mtrack2
         call("MTrack2_.setProperty","minSize",MinMarkerSize);
         call("MTrack2_.setProperty","maxSize",MaxMarkerSize);
@@ -796,7 +801,8 @@ call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+Toolba
         call("MTrack2_.setProperty","skipDialogue","true");
         run("MTrack2", "save=&OutputTablePathI");
         // Restore the Y coordinates
-        run("Set Measurements...", "redirect=None decimal=3");
+      run("Set Measurements...", "redirect=None decimal=9");
+
         run("Clear Results");
 
         // Save the Cleaned version of the file
