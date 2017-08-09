@@ -112,7 +112,7 @@ function Append(ArrayI, Value) {
 var MessageDialogPass;
 function MessageDialog(Message){
   MessageDialogPass=0;
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log", "Synchronize Windows", "Curve Fitter", "Line Graph", "W&L", "Color", "Channels", "Threshold Color", "Line Width" );
   CloseUtilityWindows(ListUtilityWindows);
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0,0,0);
@@ -128,7 +128,7 @@ var ErrorDialogPass;
 var UserResponseErrorDialog;
 function ErrorDialog(MessageError, MessageFix, ErrorResponseArray){
   ErrorDialogPass=0;
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log", "Synchronize Windows", "Curve Fitter", "Line Graph", "W&L", "Color", "Channels", "Threshold Color", "Line Width" );
   CloseUtilityWindows(ListUtilityWindows);
   Dialog.create(PluginName+" Information");
   Dialog.setInsets(0,0,0);
@@ -244,7 +244,7 @@ function CreateOutputSubDir(SubDirArray) { // SubDirArray is an array of the des
 function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, OutputDirName){
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){ImageN=ListImages[n]; selectWindow(ImageN); run("Close");} // Close open Images
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log", "Synchronize Windows", "Curve Fitter", "Line Graph", "W&L", "Color", "Channels", "Threshold Color", "Line Width" );
   CloseUtilityWindows(ListUtilityWindows);
   beep();
   // Closing Dialog Box
@@ -262,7 +262,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
 function CleanExit(MessageQuit){
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){ImageN=ListImages[n]; selectWindow(ImageN); run("Close");} // Close open Images
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log");
+ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log", "Synchronize Windows", "Curve Fitter", "Line Graph", "W&L", "Color", "Channels", "Threshold Color", "Line Width" );
   CloseUtilityWindows(ListUtilityWindows);
   beep();
   Dialog.create(PluginName+" Information");
@@ -276,7 +276,7 @@ function CleanExit(MessageQuit){
 
 /////////////////////////// Close UtilityWindows
 function CloseUtilityWindows(ListUtilityWindows){
-  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log");
+  // Typically ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log", "Synchronize Windows", "Curve Fitter", "Line Graph", "W&L", "Color", "Channels", "Threshold Color", "Line Width" );
   for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
     UtilityWindowI=ListUtilityWindows[WindowI];
     if(isOpen(UtilityWindowI)){
@@ -449,7 +449,7 @@ function CloseUtilityWindows(ListUtilityWindows){
   var ROIHeightArray = newArray(0);
   var ThresholdLowerValueArray = newArray(0);
   var ThresholdUpperValueArray = newArray(0);
-
+ var FilePath;
   function SelectFile(FolderSuffix, FileName, FileExt, FileHeaderList){
     NbPotentialFolder=0;
     FileExtPass=0;
@@ -636,7 +636,8 @@ function CloseUtilityWindows(ListUtilityWindows){
   // Initial Message
   InitialMessage="The function \""+MacroName+"\" will:"
   +"\n - Prompt to select a folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process"
-  +"\n - Prompt to select a TXT file containing ROI Coordinates and Threshold Values"
+  +"\n - Try to detect a TXT file containing ROI Coordinates and Threshold Values markers"
+  +"\n - If automatic detection fails: Prompt to select a TXT file containing ROI Coordinates and Threshold Values"
   +"\n "
   +"\nFor each "+FileExt+" file:"
   +"\n - Cropped Videos with the values found in the TXT file"
@@ -711,6 +712,11 @@ function CloseUtilityWindows(ListUtilityWindows){
     showProgress(FileI, InputFileList.length);
     call("java.lang.System.gc"); // Run garbage collector
   }
+  // Save the ROI and Threshold Values in a txt file
+  TXTFileName="ROI and Threshold Values";
+  TXTFilePath=OutputDirPath+TXTFileName+".txt";
+  File.copy(FilePath, TXTFilePath);
+
   //////////////////////////////////////////////// Process each file Part 2
 
 
