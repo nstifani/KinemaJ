@@ -262,7 +262,7 @@ function CloseAndCleanUp(PluginName, FileI, NbFile, FileExt, InputDirName, Outpu
 function CleanExit(MessageQuit){
   ListImages=getList("image.titles");
   for(n=0; n<ListImages.length; n++){ImageN=ListImages[n]; selectWindow(ImageN); run("Close");} // Close open Images
-  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log");
   CloseUtilityWindows(ListUtilityWindows);
   beep();
   Dialog.create(PluginName+" Information");
@@ -276,7 +276,7 @@ function CleanExit(MessageQuit){
 
 /////////////////////////// Close UtilityWindows
 function CloseUtilityWindows(ListUtilityWindows){
-  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C");
+  // Typically  ListUtilityWindows=newArray("Threshold", "Results", "ROI Manager", "B&C", "Log");
   for(WindowI=0; WindowI<ListUtilityWindows.length; WindowI++){
     UtilityWindowI=ListUtilityWindows[WindowI];
     if(isOpen(UtilityWindowI)){
@@ -334,6 +334,8 @@ function CloseUtilityWindows(ListUtilityWindows){
     }
 
     CurrentImageName=getTitle(); // Get the Image of the Current Image
+    BasenameCurrentImageName=split(CurrentImageName,".");
+    CurrentImageNameNoExt=BasenameCurrentImageName[0];
     CurrentSelection=selectionType(); // Get the Current selection
 
     // If the currentselection does not match the expected selection but if there is something in the overlay
@@ -380,10 +382,22 @@ function CloseUtilityWindows(ListUtilityWindows){
       //   doCommand("Point Tool..."); // Bring the non-modal Point Tool at front in a separate thread
       // }
       if(isOpen("Results")){run("Clear Results"); selectWindow("Results"); run("Close");} //end of if Results is open
+      // backUp the Current Image
+      selectWindow(CurrentImageName);
+      PathBackUpFileI=OutputDirPath+InputFileNameI;
+      run("Save", "save=&PathBackUpFileI");
+      rename(CurrentImageName);
+
       call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ToolbarPosY+ToolbarSizeY+2*Spacer);
       waitForUser(PluginName+" Information", "Draw a "+SelectionTypeName+" selection.\n"
       +SelectionInfo+
       "\nWhen done, press OK.");
+      if(!isOpen(CurrentImageName)){
+        open(PathBackUpFileI);
+        rename(CurrentImageName);
+        setBatchMode("show");
+        setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
+      }
       CurrentSelection=selectionType();
       if(CurrentSelection<0 || CurrentSelection!=SelectionValue){
         if(CurrentSelection<0){
@@ -410,6 +424,12 @@ function CloseUtilityWindows(ListUtilityWindows){
       } else {
         SelectionPromptPass=1;
         setBatchMode("hide");
+        // Delete the temporary Image
+        if(File.exists(PathBackUpFileI)==1){
+          DummyVariable=File.delete(PathBackUpFileI);
+        }
+
+
       } // End of else Selection is good
     } // End of If selection does not pass prompt for a selection
   }
@@ -521,13 +541,32 @@ function CloseUtilityWindows(ListUtilityWindows){
       run("Stop Animation");
     }
 
+    // BackUp the Image
+    selectWindow(InputFileNameI);
+    PathBackUpFileI=OutputDirPath+InputFileNameI;
+    //run("Save", "save=&PathBackUpFileI");
+    rename(InputFileNameI);
     call("ij.gui.WaitForUserDialog.setNextLocation", ToolbarPosX, ThresholdPosY+ThresholdSizeY+2*Spacer);
     waitForUser(PluginName+" Information", "Adjust the Threshold to obtain RED Markers over the Background.\n"
     +"\nWhen done, press OK.");
+    if(!isOpen(InputFileNameI)){
+      //open(PathBackUpFileI);
+      //rename(InputFileNameI);
+      //setBatchMode("show");
+      //setLocation(IJPosX, IJPosY+IJSizeY+Spacer, IJSizeX, screenHeight*0.75);
+      // Delete the temporary Source file
+      MessageQuit="The function \""+ MacroName+"\" stopped because the image has been closed by user.\nPlease do not close images.";
+      CleanExit(MessageQuit);
+    } else {
+      setBatchMode("hide");
+      // Get the Threshold Values
+      getThreshold(ThresholdLowerValue,ThresholdUpperValue);
 
-    setBatchMode("hide");
-    // Get the Threshold Values
-    getThreshold(ThresholdLowerValue,ThresholdUpperValue);
+      if(ThresholdLowerValue== -1){
+        MessageQuit="The function \""+ MacroName+"\" stopped because the image was not thresholded.\nPlease Threshold the image.";
+        CleanExit(MessageQuit);
+      }
+    }
 
     // Save the Number of Slices to compute the processing time
     NbSliceArray=Append(NbSliceArray, nSlices);
