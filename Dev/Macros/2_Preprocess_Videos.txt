@@ -159,6 +159,7 @@ function SelectInputDir(MinNbFile, FileExt){
   // FileExt This is the file extension as a string example "tif"
   InputDirPath=getDirectory("Select a folder containing at least "+MinNbFile+" "+FileExt+" file(s) to process."); // Select a folder
   InputItemList=getFileList(InputDirPath); // List of Item in the selected folder
+  InputItemList=Array.sort(InputItemList); // Sort the List of Item
   ParentDir=File.getParent(InputDirPath)+File.separator;
   InputDirName=File.getName(InputDirPath);
 
