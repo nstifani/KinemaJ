@@ -558,7 +558,8 @@ function CloseUtilityWindows(ListUtilityWindows){
     selectWindow(InputFileNameI);
     run("Duplicate...", "title=AutoDetect");
     selectWindow("AutoDetect");
-    run("Auto Threshold...", "method=Shanbhag white"); // Threshold
+//    run("Auto Threshold...", "method=Shanbhag white"); // Threshold not working on FIJI
+    setAutoThreshold("Shanbhag dark"); // Threshold
     run("Convert to Mask");
     run("Open"); // Remove noise
 
