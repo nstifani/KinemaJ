@@ -326,7 +326,7 @@ function CloseUtilityWindows(ListUtilityWindows){
     SubfolderPass=0;
     for (ItemI=0; ItemI<RequiredSubfolderArray.length; ItemI++){ // Screen the RequiredItem List
       for (ItemN=0; ItemN<MasterInputList.length; ItemN++){
-        if(RequiredSubfolderArray[ItemI]+File.separator==MasterInputList[ItemN]){
+        if(RequiredSubfolderArray[ItemI]+"/"==MasterInputList[ItemN]){
           SubfolderPass++;
           ItemN=MasterInputList.length; // End the loop once found
         } // end of if found increment
